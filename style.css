@@ -840,5 +840,87 @@ css
     }
 
 }
+/* ============================= */
+/* DEVELOPMENT NOTICE */
+/* ============================= */
 
+.development-notice {
+    margin-bottom: 22px;
+    padding: 12px 14px;
+    border: 1px solid #ff7900;
+    border-radius: 12px;
+    background: rgba(255, 121, 0, 0.08);
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.development-notice strong {
+    color: #ff7900;
+    margin-right: 4px;
+}
+
+.development-notice span {
+    display: block;
+    margin-top: 3px;
+    opacity: 0.75;
+}
+
+
+/* ============================= */
+/* DEVELOPER CREDIT */
+/* ============================= */
+
+.developer-credit {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+    text-align: center;
+
+    font-size: 12px;
+    letter-spacing: 1.5px;
+}
+
+.developer-credit span {
+    opacity: 0.6;
+}
+
+.developer-credit strong {
+    display: inline-block;
+    margin-left: 5px;
+
+    color: #ff7900;
+
+    animation: masroorGlow 2s ease-in-out infinite;
+}
+
+
+/* ============================= */
+/* MASROOR ANIMATION */
+/* ============================= */
+
+@keyframes masroorGlow {
+
+    0% {
+        transform: translateX(0);
+        opacity: 0.65;
+        text-shadow: 0 0 0 rgba(255, 121, 0, 0);
+    }
+
+    50% {
+        transform: translateX(4px);
+        opacity: 1;
+        text-shadow:
+            0 0 6px rgba(255, 121, 0, 0.4),
+            0 0 12px rgba(255, 121, 0, 0.2);
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 0.65;
+        text-shadow: 0 0 0 rgba(255, 121, 0, 0);
+    }
+
+}
 

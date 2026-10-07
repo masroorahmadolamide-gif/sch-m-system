@@ -1,0 +1,532 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Course</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+    <main class="dashboard">
+
+
+        <!-- HEADER -->
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <h1 id="course-title">
+                    Loading course...
+                </h1>
+
+                <p id="course-instructor">
+                    Loading instructor...
+                </p>
+
+            </div>
+
+
+            <button id="back-courses">
+                ← Courses
+            </button>
+
+        </header>
+
+
+        <!-- CONTENT -->
+
+        <section class="dashboard-content">
+
+
+            <!-- COURSE OVERVIEW -->
+
+            <div class="welcome-card">
+
+                <h2>
+                    📚 Course Overview
+                </h2>
+
+                <p id="course-description">
+                    Loading course description...
+                </p>
+
+            </div>
+
+
+            <!-- LESSONS -->
+
+            <div class="dashboard-card">
+
+                <h3>
+                    📖 Lessons
+                </h3>
+
+
+                <div id="lessons-container">
+
+                    <p>
+                        Loading lessons...
+                    </p>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+
+    <script type="module">
+
+
+        /* ============================= */
+        /* FIREBASE IMPORTS */
+        /* ============================= */
+
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+        import {
+            getAuth,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            query,
+            where,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+        /* ============================= */
+        /* FIREBASE CONFIG */
+        /* ============================= */
+
+        const firebaseConfig = {
+
+            apiKey: "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
+
+            authDomain: "sch-m-system.firebaseapp.com",
+
+            projectId: "sch-m-system",
+
+            storageBucket: "sch-m-system.firebasestorage.app",
+
+            messagingSenderId: "24559011089",
+
+            appId: "1:24559011089:web:8009d445b45223b53e38b0",
+
+            measurementId: "G-4J1V0208LJ"
+
+        };
+
+
+        const app =
+            initializeApp(
+                firebaseConfig
+            );
+
+
+        const auth =
+            getAuth(app);
+
+
+        const db =
+            getFirestore(app);
+
+
+        /* ============================= */
+        /* ELEMENTS */
+        /* ============================= */
+
+        const courseTitle =
+            document.getElementById(
+                "course-title"
+            );
+
+
+        const courseInstructor =
+            document.getElementById(
+                "course-instructor"
+            );
+
+
+        const courseDescription =
+            document.getElementById(
+                "course-description"
+            );
+
+
+        const lessonsContainer =
+            document.getElementById(
+                "lessons-container"
+            );
+
+
+        /* ============================= */
+        /* COURSE ID */
+        /* ============================= */
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        const courseId =
+            params.get("id");
+
+
+        /* ============================= */
+        /* AUTHENTICATION */
+        /* ============================= */
+
+        onAuthStateChanged(
+            auth,
+            async (user) => {
+
+                if (!user) {
+
+                    window.location.href =
+                        "index.html";
+
+                    return;
+
+                }
+
+
+                if (!courseId) {
+
+                    courseTitle.textContent =
+                        "Course not found";
+
+
+                    courseDescription.textContent =
+                        "No course ID was provided.";
+
+
+                    return;
+
+                }
+
+
+                loadCourse();
+
+            }
+        );
+
+
+        /* ============================= */
+        /* LOAD COURSE */
+        /* ============================= */
+
+        async function loadCourse() {
+
+            try {
+
+                /* GET COURSE */
+
+                const courseRef =
+                    doc(
+                        db,
+                        "courses",
+                        courseId
+                    );
+
+
+                const courseSnapshot =
+                    await getDoc(
+                        courseRef
+                    );
+
+
+                if (
+                    !courseSnapshot.exists()
+                ) {
+
+                    courseTitle.textContent =
+                        "Course not found";
+
+
+                    courseDescription.textContent =
+                        "This course does not exist.";
+
+
+                    return;
+
+                }
+
+
+                const course =
+                    courseSnapshot.data();
+
+
+                courseTitle.textContent =
+                    `📚 ${
+                        course.title ||
+                        "Untitled Course"
+                    }`;
+
+
+                courseInstructor.textContent =
+                    `👨‍🏫 Instructor: ${
+                        course.instructor ||
+                        "Not assigned"
+                    }`;
+
+
+                courseDescription.textContent =
+                    course.description ||
+                    "No description available.";
+
+
+                /* ============================= */
+                /* GET LESSONS */
+                /* ============================= */
+
+                const lessonsQuery =
+                    query(
+                        collection(
+                            db,
+                            "lessons"
+                        ),
+                        where(
+                            "courseId",
+                            "==",
+                            courseId
+                        )
+                    );
+
+
+                const lessonsSnapshot =
+                    await getDocs(
+                        lessonsQuery
+                    );
+
+
+                lessonsContainer.innerHTML =
+                    "";
+
+
+                if (
+                    lessonsSnapshot.empty
+                ) {
+
+                    const noLessons =
+                        document.createElement(
+                            "p"
+                        );
+
+
+                    noLessons.textContent =
+                        "No lessons available yet.";
+
+
+                    lessonsContainer.appendChild(
+                        noLessons
+                    );
+
+
+                    return;
+
+                }
+
+
+                /* ============================= */
+                /* DISPLAY LESSONS */
+                /* ============================= */
+
+                let lessonNumber = 1;
+
+
+                lessonsSnapshot.forEach(
+                    (lessonDoc) => {
+
+                        const lesson =
+                            lessonDoc.data();
+
+
+                        const lessonCard =
+                            document.createElement(
+                                "div"
+                            );
+
+
+                        lessonCard.className =
+                            "dashboard-card";
+
+
+                        lessonCard.style.marginTop =
+                            "15px";
+
+
+                        /* LESSON TITLE */
+
+                        const title =
+                            document.createElement(
+                                "h3"
+                            );
+
+
+                        title.textContent =
+                            `📖 Lesson ${
+                                lessonNumber
+                            }: ${
+                                lesson.title ||
+                                "Untitled Lesson"
+                            }`;
+
+
+                        /* LESSON PREVIEW */
+
+                        const content =
+                            document.createElement(
+                                "p"
+                            );
+
+
+                        const preview =
+                            lesson.content ||
+                            "No lesson content available.";
+
+
+                        content.textContent =
+                            preview.length > 120
+                                ? preview.substring(
+                                    0,
+                                    120
+                                ) + "..."
+                                : preview;
+
+
+                        /* OPEN LESSON BUTTON */
+
+                        const button =
+                            document.createElement(
+                                "button"
+                            );
+
+
+                        button.textContent =
+                            "Open Lesson →";
+
+
+                        button.addEventListener(
+                            "click",
+                            () => {
+
+                                window.location.href =
+                                    `lesson.html?id=${lessonDoc.id}`;
+
+                            }
+                        );
+
+
+                        /* ADD ELEMENTS */
+
+                        lessonCard.appendChild(
+                            title
+                        );
+
+
+                        lessonCard.appendChild(
+                            content
+                        );
+
+
+                        lessonCard.appendChild(
+                            button
+                        );
+
+
+                        lessonsContainer.appendChild(
+                            lessonCard
+                        );
+
+
+                        lessonNumber++;
+
+                    }
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Error loading course:",
+                    error
+                );
+
+
+                lessonsContainer.innerHTML =
+                    "";
+
+
+                const errorMessage =
+                    document.createElement(
+                        "p"
+                    );
+
+
+                errorMessage.textContent =
+                    "Something went wrong while loading the lessons.";
+
+
+                lessonsContainer.appendChild(
+                    errorMessage
+                );
+
+            }
+
+        }
+
+
+        /* ============================= */
+        /* BACK BUTTON */
+        /* ============================= */
+
+        document
+            .getElementById(
+                "back-courses"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    window.location.href =
+                        "courses.html";
+
+                }
+            );
+
+    </script>
+
+</body>
+
+</html>
+```

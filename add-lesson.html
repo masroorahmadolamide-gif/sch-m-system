@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Add Lesson</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+    <main class="dashboard">
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <h1>📖 Add Lesson</h1>
+
+                <p>Create a lesson for your course.</p>
+
+            </div>
+
+            <button id="back-dashboard">
+                ← Dashboard
+            </button>
+
+        </header>
+
+
+        <section class="dashboard-content">
+
+            <div class="dashboard-card">
+
+                <h3>➕ Create New Lesson</h3>
+
+                <form id="lesson-form">
+
+                    <label for="course-select">
+                        Select Course
+                    </label>
+
+                    <select
+                        id="course-select"
+                        required
+                    >
+
+                        <option value="">
+                            Loading courses...
+                        </option>
+
+                    </select>
+
+
+                    <label for="lesson-number">
+                        Lesson Number
+                    </label>
+
+                    <input
+                        type="text"
+                        id="lesson-number"
+                        placeholder="e.g. 1"
+                        required
+                    >
+
+
+                    <label for="lesson-title">
+                        Lesson Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="lesson-title"
+                        placeholder="e.g. Introduction to Physics"
+                        required
+                    >
+
+
+                    <label for="lesson-content">
+                        Lesson Content
+                    </label>
+
+                    <textarea
+                        id="lesson-content"
+                        rows="8"
+                        placeholder="Write your lesson content here..."
+                        required
+                    ></textarea>
+
+
+                    <button type="submit">
+                        Save Lesson
+                    </button>
+
+                </form>
+
+
+                <p id="lesson-message"></p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script type="module">
+
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+        import {
+            getAuth,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            addDoc,
+            query,
+            where,
+            getDocs,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+        const firebaseConfig = {
+
+            apiKey: "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
+
+            authDomain: "sch-m-system.firebaseapp.com",
+
+            projectId: "sch-m-system",
+
+            storageBucket: "sch-m-system.firebasestorage.app",
+
+            messagingSenderId: "24559011089",
+
+            appId: "1:24559011089:web:8009d445b45223b53e38b0",
+
+            measurementId: "G-4J1V0208LJ"
+
+        };
+
+
+        const app =
+            initializeApp(firebaseConfig);
+
+
+        const auth =
+            getAuth(app);
+
+
+        const db =
+            getFirestore(app);
+
+
+        const courseSelect =
+            document.getElementById(
+                "course-select"
+            );
+
+
+        const lessonForm =
+            document.getElementById(
+                "lesson-form"
+            );
+
+
+        const lessonMessage =
+            document.getElementById(
+                "lesson-message"
+            );
+
+
+        let currentUser = null;
+
+
+        onAuthStateChanged(
+            auth,
+            async (user) => {
+
+                if (!user) {
+
+                    window.location.href =
+                        "index.html";
+
+                    return;
+
+                }
+
+
+                currentUser = user;
+
+
+                try {
+
+                    const userDoc =
+                        await getDoc(
+                            doc(
+                                db,
+                                "users",
+                                user.uid
+                            )
+                        );
+
+
+                    if (!userDoc.exists()) {
+
+                        window.location.href =
+                            "dashboard.html";
+
+                        return;
+
+                    }
+
+
+                    const userData =
+                        userDoc.data();
+
+
+                    if (
+                        userData.role !==
+                        "instructor"
+                    ) {
+
+                        alert(
+                            "This page is for instructors only."
+                        );
+
+                        window.location.href =
+                            "dashboard.html";
+
+                        return;
+
+                    }
+
+
+                    loadInstructorCourses(
+                        user.uid
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Error checking instructor:",
+                        error
+                    );
+
+                }
+
+            }
+        );
+
+
+        async function loadInstructorCourses(
+            instructorId
+        ) {
+
+            try {
+
+                const coursesQuery =
+                    query(
+                        collection(
+                            db,
+                            "courses"
+                        ),
+                        where(
+                            "instructorId",
+                            "==",
+                            instructorId
+                        )
+                    );
+
+
+                const coursesSnapshot =
+                    await getDocs(
+                        coursesQuery
+                    );
+
+
+                courseSelect.innerHTML =
+                    "";
+
+
+                if (coursesSnapshot.empty) {
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+                    option.value = "";
+
+                    option.textContent =
+                        "No courses available";
+
+                    courseSelect.appendChild(
+                        option
+                    );
+
+                    return;
+
+                }
+
+
+                const firstOption =
+                    document.createElement(
+                        "option"
+                    );
+
+                firstOption.value = "";
+
+                firstOption.textContent =
+                    "Select a course";
+
+                firstOption.disabled = true;
+
+                firstOption.selected = true;
+
+                courseSelect.appendChild(
+                    firstOption
+                );
+
+
+                coursesSnapshot.forEach(
+                    (courseDoc) => {
+
+                        const course =
+                            courseDoc.data();
+
+
+                        const option =
+                            document.createElement(
+                                "option"
+                            );
+
+
+                        option.value =
+                            courseDoc.id;
+
+
+                        option.textContent =
+                            course.title ||
+                            "Untitled Course";
+
+
+                        courseSelect.appendChild(
+                            option
+                        );
+
+                    }
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Error loading courses:",
+                    error
+                );
+
+
+                courseSelect.innerHTML = `
+                    <option value="">
+                        Unable to load courses
+                    </option>
+                `;
+
+            }
+
+        }
+
+
+        lessonForm.addEventListener(
+            "submit",
+            async (event) => {
+
+                event.preventDefault();
+
+
+                if (!currentUser) {
+
+                    return;
+
+                }
+
+
+                const courseId =
+                    courseSelect.value;
+
+
+                const lessonNumber =
+                    document
+                        .getElementById(
+                            "lesson-number"
+                        )
+                        .value
+                        .trim();
+
+
+                const title =
+                    document
+                        .getElementById(
+                            "lesson-title"
+                        )
+                        .value
+                        .trim();
+
+
+                const content =
+                    document
+                        .getElementById(
+                            "lesson-content"
+                        )
+                        .value
+                        .trim();
+
+
+                if (!courseId) {
+
+                    lessonMessage.textContent =
+                        "Please select a course.";
+
+                    return;
+
+                }
+
+
+                try {
+
+                    lessonMessage.textContent =
+                        "Saving lesson...";
+
+
+                    await addDoc(
+                        collection(
+                            db,
+                            "lessons"
+                        ),
+                        {
+
+                            courseId: courseId,
+
+                            lessonNumber:
+                                lessonNumber,
+
+                            title: title,
+
+                            content: content,
+
+                            instructorId:
+                                currentUser.uid,
+
+                            createdAt:
+                                serverTimestamp()
+
+                        }
+                    );
+
+
+                    lessonMessage.textContent =
+                        "Lesson saved successfully! ✅";
+
+
+                    lessonForm.reset();
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Error creating lesson:",
+                        error
+                    );
+
+
+                    lessonMessage.textContent =
+                        `${error.code}: ${error.message}`;
+
+                }
+
+            }
+        );
+
+
+        document
+            .getElementById("back-dashboard")
+            .addEventListener(
+                "click",
+                () => {
+
+                    window.location.href =
+                        "instructor-dashboard.html";
+
+                }
+            );
+
+    </script>
+
+</body>
+
+</html>

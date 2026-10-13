@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,17 +6,11 @@
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Dashboard</title>
+    <title>Student Dashboard | Learning Platform</title>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css">
 
 </head>
 
@@ -26,16 +21,11 @@
         <header class="dashboard-header">
 
             <div>
-
                 <h1>Learning Platform</h1>
-
-                <p>
-                    Welcome back 👋
-                </p>
-
+                <p>Welcome back 👋</p>
             </div>
 
-            <button id="logout-btn">
+            <button id="logout-btn" type="button">
                 Logout
             </button>
 
@@ -59,6 +49,7 @@
 
             <div class="dashboard-grid">
 
+                <!-- COURSES -->
 
                 <div class="dashboard-card">
 
@@ -68,12 +59,14 @@
                         View your courses and learning materials.
                     </p>
 
-                    <button id="courses-btn">
+                    <button id="courses-btn" type="button">
                         View Courses
                     </button>
 
                 </div>
 
+
+                <!-- CLASSES -->
 
                 <div class="dashboard-card">
 
@@ -83,12 +76,14 @@
                         Join your online classes.
                     </p>
 
-                    <button>
+                    <button id="classes-btn" type="button">
                         My Classes
                     </button>
 
                 </div>
 
+
+                <!-- MESSAGES -->
 
                 <div class="dashboard-card">
 
@@ -98,12 +93,14 @@
                         Chat with instructors and students.
                     </p>
 
-                    <button>
+                    <button id="messages-btn" type="button">
                         Open Messages
                     </button>
 
                 </div>
 
+
+                <!-- PROFILE -->
 
                 <div class="dashboard-card">
 
@@ -113,28 +110,61 @@
                         Manage your account details.
                     </p>
 
-                    <button id="profile-btn">
+                    <button id="profile-btn" type="button">
                         View Profile
                     </button>
 
                 </div>
 
 
+                <!-- LEARNING PROGRESS -->
+
+                <div class="dashboard-card progress-card">
+
+                    <h3>📈 My Learning Progress</h3>
+
+                    <p id="progress-summary">
+                        Track your learning journey here.
+                    </p>
+
+                    <div
+                        class="progress-track"
+                        role="progressbar"
+                        aria-label="Lesson completion progress"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="0"
+                        id="progress-track"
+                    >
+
+                        <div
+                            id="progress-bar"
+                            class="progress-bar"
+                        ></div>
+
+                    </div>
+
+                    <p id="progress-count">
+                        Loading your progress...
+                    </p>
+
+                </div>
+
             </div>
 
         </section>
 
 
-        <section
-            id="profile-panel"
-            class="profile-panel"
-        >
+        <!-- PROFILE PANEL -->
+
+        <section id="profile-panel" class="profile-panel">
 
             <div class="profile-card">
 
                 <button
                     id="close-profile"
                     class="close-profile"
+                    type="button"
                 >
                     ← Back to Dashboard
                 </button>
@@ -144,12 +174,9 @@
 
                     <div class="profile-avatar">
 
-                        <span id="profile-initial">
-                            U
-                        </span>
+                        <span id="profile-initial">U</span>
 
                     </div>
-
 
                     <div>
 
@@ -168,21 +195,16 @@
 
                 <div class="profile-details">
 
-
                     <div class="profile-detail">
 
                         <span>👤</span>
 
                         <div>
-
-                            <small>
-                                Full Name
-                            </small>
+                            <small>Full Name</small>
 
                             <strong id="profile-name">
                                 Loading...
                             </strong>
-
                         </div>
 
                     </div>
@@ -193,15 +215,11 @@
                         <span>📧</span>
 
                         <div>
-
-                            <small>
-                                Email Address
-                            </small>
+                            <small>Email Address</small>
 
                             <strong id="profile-email">
                                 Loading...
                             </strong>
-
                         </div>
 
                     </div>
@@ -212,19 +230,14 @@
                         <span>🎓</span>
 
                         <div>
-
-                            <small>
-                                Account Type
-                            </small>
+                            <small>Account Type</small>
 
                             <strong id="profile-role">
                                 Loading...
                             </strong>
-
                         </div>
 
                     </div>
-
 
                 </div>
 
@@ -252,9 +265,15 @@
         import {
             getFirestore,
             doc,
-            getDoc
+            getDoc,
+            collection,
+            getDocs,
+            query,
+            where
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+
+        // FIREBASE CONFIGURATION
 
         const firebaseConfig = {
 
@@ -282,155 +301,391 @@
         const db = getFirestore(app);
 
 
-        onAuthStateChanged(auth, async (user) => {
+        // PROFILE ELEMENTS
 
-            if (!user) {
+        const welcomeName =
+            document.getElementById("welcome-name");
 
-                window.location.href = "index.html";
+        const profileDisplayName =
+            document.getElementById("profile-display-name");
 
-                return;
+        const profileDisplayRole =
+            document.getElementById("profile-display-role");
 
-            }
+        const profileName =
+            document.getElementById("profile-name");
 
+        const profileEmail =
+            document.getElementById("profile-email");
+
+        const profileRole =
+            document.getElementById("profile-role");
+
+        const profileInitial =
+            document.getElementById("profile-initial");
+
+
+        // PROGRESS ELEMENTS
+
+        const progressSummary =
+            document.getElementById("progress-summary");
+
+        const progressCount =
+            document.getElementById("progress-count");
+
+        const progressBar =
+            document.getElementById("progress-bar");
+
+        const progressTrack =
+            document.getElementById("progress-track");
+
+
+        // LOAD STUDENT LEARNING PROGRESS
+
+        async function loadLearningProgress(userId) {
 
             try {
 
-                const userDoc = await getDoc(
-                    doc(db, "users", user.uid)
+                progressSummary.textContent =
+                    "Calculating your learning progress...";
+
+                progressCount.textContent =
+                    "Loading lessons...";
+
+
+                const [lessonsSnapshot, progressSnapshot] =
+                    await Promise.all([
+
+                        getDocs(
+                            collection(db, "lessons")
+                        ),
+
+                        getDocs(
+                            query(
+                                collection(db, "lessonProgress"),
+                                where("userId", "==", userId)
+                            )
+                        )
+
+                    ]);
+
+
+                // Get all existing lesson IDs.
+
+                const validLessonIds = new Set(
+                    lessonsSnapshot.docs.map(
+                        lessonDoc => lessonDoc.id
+                    )
                 );
 
 
-                if (userDoc.exists()) {
+                // Count completed lessons belonging
+                // to lessons that still exist.
 
-                    const userData = userDoc.data();
-
-
-                    document.getElementById(
-                        "welcome-name"
-                    ).textContent =
-                        `Welcome, ${userData.name} 👋`;
+                const completedLessonIds = new Set();
 
 
-                    document.getElementById(
-                        "profile-display-name"
-                    ).textContent =
-                        userData.name;
+                progressSnapshot.forEach(
+                    progressDoc => {
+
+                        const progress =
+                            progressDoc.data();
 
 
-                    document.getElementById(
-                        "profile-display-role"
-                    ).textContent =
-                        userData.role;
+                        if (
+                            progress.completed === true &&
+                            validLessonIds.has(
+                                progress.lessonId
+                            )
+                        ) {
+
+                            completedLessonIds.add(
+                                progress.lessonId
+                            );
+
+                        }
+
+                    }
+                );
 
 
-                    document.getElementById(
-                        "profile-name"
-                    ).textContent =
-                        userData.name;
+                const totalLessons =
+                    validLessonIds.size;
+
+                const completedCount =
+                    completedLessonIds.size;
 
 
-                    document.getElementById(
-                        "profile-email"
-                    ).textContent =
-                        userData.email;
+                const percentage =
+                    totalLessons > 0
+                        ? Math.round(
+                            (completedCount / totalLessons) * 100
+                        )
+                        : 0;
 
 
-                    document.getElementById(
-                        "profile-role"
-                    ).textContent =
-                        userData.role;
+                // Update progress display.
+
+                progressBar.style.width =
+                    `${percentage}%`;
+
+                progressTrack.setAttribute(
+                    "aria-valuenow",
+                    String(percentage)
+                );
 
 
-                    document.getElementById(
-                        "profile-initial"
-                    ).textContent =
-                        userData.name
-                            .charAt(0)
-                            .toUpperCase();
+                progressCount.textContent =
+                    `${completedCount} of ${totalLessons} lessons completed`;
+
+
+                if (totalLessons === 0) {
+
+                    progressSummary.textContent =
+                        "Your learning progress will appear when lessons are available.";
+
+                } else if (percentage === 100) {
+
+                    progressSummary.textContent =
+                        "Amazing work! You have completed every available lesson. 🎉";
+
+                } else {
+
+                    progressSummary.textContent =
+                        `You've completed ${percentage}% of all available lessons. Keep going!`;
 
                 }
+
 
             } catch (error) {
 
                 console.error(
-                    "Error loading user profile:",
+                    "Error loading learning progress:",
                     error
                 );
 
+
+                progressSummary.textContent =
+                    "We couldn't load your learning progress.";
+
+                progressCount.textContent =
+                    "Please refresh and try again.";
+
             }
 
-        });
+        }
 
 
-        document
-            .getElementById("logout-btn")
-            .addEventListener("click", async () => {
+        // CHECK AUTHENTICATION AND LOAD PROFILE
 
-                try {
+        onAuthStateChanged(
+            auth,
+            async (user) => {
 
-                    await signOut(auth);
+                if (!user) {
 
                     window.location.href =
                         "index.html";
 
-                } catch (error) {
-
-                    console.error(
-                        "Logout error:",
-                        error
-                    );
+                    return;
 
                 }
 
-            });
 
+                try {
+
+                    const userDoc = await getDoc(
+                        doc(db, "users", user.uid)
+                    );
+
+
+                    if (userDoc.exists()) {
+
+                        const userData =
+                            userDoc.data();
+
+
+                        const name =
+                            userData.name || "Student";
+
+                        const email =
+                            userData.email || user.email || "Not available";
+
+                        const role =
+                            userData.role || "student";
+
+
+                        welcomeName.textContent =
+                            `Welcome, ${name} 👋`;
+
+
+                        profileDisplayName.textContent =
+                            name;
+
+                        profileDisplayRole.textContent =
+                            role;
+
+                        profileName.textContent =
+                            name;
+
+                        profileEmail.textContent =
+                            email;
+
+                        profileRole.textContent =
+                            role;
+
+                        profileInitial.textContent =
+                            name.charAt(0).toUpperCase();
+
+                    }
+
+
+                    // Load progress for this signed-in user.
+
+                    await loadLearningProgress(
+                        user.uid
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Error loading dashboard:",
+                        error
+                    );
+
+                    progressSummary.textContent =
+                        "Unable to load your dashboard information.";
+
+                }
+
+            }
+        );
+
+
+        // LOGOUT
+
+        document
+            .getElementById("logout-btn")
+            .addEventListener(
+                "click",
+                async () => {
+
+                    try {
+
+                        await signOut(auth);
+
+                        window.location.href =
+                            "index.html";
+
+                    } catch (error) {
+
+                        console.error(
+                            "Logout error:",
+                            error
+                        );
+
+                        alert(
+                            "Unable to log out. Please try again."
+                        );
+
+                    }
+
+                }
+            );
+
+
+        // OPEN PROFILE
 
         document
             .getElementById("profile-btn")
-            .addEventListener("click", () => {
+            .addEventListener(
+                "click",
+                () => {
 
-                document
-                    .getElementById("profile-panel")
-                    .classList.add("active");
-
-
-                document
-                    .querySelector(".dashboard-content")
-                    .style.display = "none";
+                    document
+                        .getElementById("profile-panel")
+                        .classList.add("active");
 
 
-                window.scrollTo({
-                    top: 0,
-                    behavior: "smooth"
-                });
+                    document
+                        .querySelector(".dashboard-content")
+                        .style.display = "none";
 
-            });
 
+                    window.scrollTo({
+                        top: 0,
+                        behavior: "smooth"
+                    });
+
+                }
+            );
+
+
+        // CLOSE PROFILE
 
         document
             .getElementById("close-profile")
-            .addEventListener("click", () => {
+            .addEventListener(
+                "click",
+                () => {
 
-                document
-                    .getElementById("profile-panel")
-                    .classList.remove("active");
+                    document
+                        .getElementById("profile-panel")
+                        .classList.remove("active");
 
 
-                document
-                    .querySelector(".dashboard-content")
-                    .style.display = "block";
+                    document
+                        .querySelector(".dashboard-content")
+                        .style.display = "block";
 
-            });
+                }
+            );
 
+
+        // OPEN COURSES
 
         document
             .getElementById("courses-btn")
-            .addEventListener("click", () => {
+            .addEventListener(
+                "click",
+                () => {
 
-                window.location.href =
-                    "courses.html";
+                    window.location.href =
+                        "courses.html";
 
-            });
+                }
+            );
+
+
+        // CLASSES AND MESSAGES ARE NOT CONNECTED YET.
+
+        document
+            .getElementById("classes-btn")
+            .addEventListener(
+                "click",
+                () => {
+
+                    alert(
+                        "The online classes feature is coming next."
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById("messages-btn")
+            .addEventListener(
+                "click",
+                () => {
+
+                    alert(
+                        "The messaging feature is coming next."
+                    );
+
+                }
+            );
 
     </script>
 

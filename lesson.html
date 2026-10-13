@@ -1,64 +1,96 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <title>Lesson | Learning Platform</title>
 
-    <title>Lesson</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <main class="lesson-page">
+    <main class="lesson-shell">
 
-        <a
-            href="#"
-            class="lesson-back-btn"
-            id="back-btn"
-        >
-            ← Back
-        </a>
+        <header class="lesson-topbar">
 
+            <a href="courses.html" class="lesson-brand">
+                <span class="lesson-brand-icon">L</span>
+                Learning Platform
+            </a>
 
-        <section class="lesson-header">
+            <button id="back-course" type="button" class="lesson-back-btn">
+                ← Back to Course
+            </button>
 
-            <div class="course-name" id="course-name">
-                Loading course...
+        </header>
+
+        <section class="lesson-main">
+
+            <div class="lesson-breadcrumb">
+                <span>My Courses</span>
+                <span>›</span>
+                <span id="breadcrumb-course">Loading course...</span>
             </div>
 
-            <h1 id="lesson-title">
-                Loading lesson...
-            </h1>
+            <div class="lesson-heading">
 
-            <p
-                class="lesson-instructor"
-                id="lesson-instructor"
-            >
-            </p>
+                <span class="lesson-label">COURSE LESSON</span>
 
-        </section>
+                <h1 id="lesson-title">Loading lesson...</h1>
 
+                <p id="lesson-course-name">
+                    Preparing your learning materials...
+                </p>
 
-        <section class="lesson-content">
+            </div>
 
-            <p id="lesson-status">
-                Loading lesson...
-            </p>
+            <article class="lesson-reading-card">
 
-            <div id="lesson-content">
+                <div class="lesson-reading-header">
+
+                    <div>
+                        <span class="lesson-reading-icon">📖</span>
+                    </div>
+
+                    <div>
+                        <h2>Lesson Content</h2>
+                        <p>Learn at your own pace.</p>
+                    </div>
+
+                </div>
+
+                <div class="lesson-divider"></div>
+
+                <div id="lesson-content" class="lesson-content">
+                    Loading lesson content...
+                </div>
+
+                <div class="lesson-completion-panel">
+
+                    <p id="completion-status">
+                        Finish reading this lesson when you're ready.
+                    </p>
+
+                    <button
+                        id="complete-lesson-btn"
+                        class="lesson-complete-btn"
+                        type="button"
+                        disabled
+                    >
+                        Mark as Completed ✓
+                    </button>
+
+                </div>
+
+                <p id="lesson-message" class="lesson-message"></p>
+
+            </article>
+
+            <div class="lesson-footer">
+                📚 Keep learning, one lesson at a time.
             </div>
 
         </section>
@@ -72,216 +104,224 @@
             initializeApp
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-
         import {
             getAuth,
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-
         import {
             getFirestore,
             doc,
-            getDoc
+            getDoc,
+            setDoc,
+            serverTimestamp
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-        /* ============================= */
-        /* FIREBASE CONFIG */
-        /* ============================= */
-
         const firebaseConfig = {
-
             apiKey: "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
-
             authDomain: "sch-m-system.firebaseapp.com",
-
             projectId: "sch-m-system",
-
             storageBucket: "sch-m-system.firebasestorage.app",
-
             messagingSenderId: "24559011089",
-
             appId: "1:24559011089:web:8009d445b45223b53e38b0",
-
             measurementId: "G-4J1V0208LJ"
-
         };
 
 
-        const app =
-            initializeApp(firebaseConfig);
-
-        const auth =
-            getAuth(app);
-
-        const db =
-            getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
 
-        /* ============================= */
-        /* ELEMENTS */
-        /* ============================= */
+        const params = new URLSearchParams(
+            window.location.search
+        );
 
-        const courseName =
-            document.getElementById("course-name");
-
-        const lessonStatus =
-            document.getElementById("lesson-status");
+        const lessonId = params.get("id");
 
         const lessonTitle =
             document.getElementById("lesson-title");
 
-        const lessonInstructor =
-            document.getElementById("lesson-instructor");
-
         const lessonContent =
             document.getElementById("lesson-content");
 
+        const lessonCourseName =
+            document.getElementById("lesson-course-name");
 
-        /* ============================= */
-        /* GET LESSON ID */
-        /* ============================= */
+        const breadcrumbCourse =
+            document.getElementById("breadcrumb-course");
 
-        const params =
-            new URLSearchParams(
-                window.location.search
+        const lessonMessage =
+            document.getElementById("lesson-message");
+
+        const completionStatus =
+            document.getElementById("completion-status");
+
+        const completeButton =
+            document.getElementById("complete-lesson-btn");
+
+        const backButton =
+            document.getElementById("back-course");
+
+
+        let currentUser = null;
+        let courseId = null;
+        let lessonLoaded = false;
+
+
+        function showCompleted() {
+
+            completeButton.textContent =
+                "✓ Lesson Completed";
+
+            completeButton.disabled = true;
+
+            completionStatus.textContent =
+                "Great work! Your progress has been saved. 🎉";
+
+            completionStatus.classList.add(
+                "lesson-completed-text"
             );
 
-        const lessonId =
-            params.get("id");
+        }
 
 
-        /* ============================= */
-        /* AUTHENTICATION */
-        /* ============================= */
+        onAuthStateChanged(auth, async (user) => {
 
-        onAuthStateChanged(
-            auth,
-            async (user) => {
+            if (!user) {
 
-                if (!user) {
-
-                    window.location.href =
-                        "index.html";
-
-                    return;
-
-                }
-
-
-                if (!lessonId) {
-
-                    lessonStatus.textContent =
-                        "Lesson not found.";
-
-                    return;
-
-                }
-
-
-                loadLesson();
+                window.location.href = "index.html";
+                return;
 
             }
-        );
+
+            currentUser = user;
 
 
-        /* ============================= */
-        /* LOAD LESSON */
-        /* ============================= */
+            if (!lessonId) {
 
-        async function loadLesson() {
+                lessonTitle.textContent =
+                    "Lesson not found";
+
+                lessonContent.textContent =
+                    "No lesson ID was provided.";
+
+                lessonCourseName.textContent = "";
+
+                lessonMessage.textContent =
+                    "Return to Courses and open a lesson.";
+
+                return;
+
+            }
+
 
             try {
 
-                const lessonRef =
-                    doc(
-                        db,
-                        "lessons",
-                        lessonId
-                    );
+                // LOAD LESSON
 
-
-                const lessonSnapshot =
-                    await getDoc(
-                        lessonRef
-                    );
+                const lessonSnapshot = await getDoc(
+                    doc(db, "lessons", lessonId)
+                );
 
 
                 if (!lessonSnapshot.exists()) {
 
-                    lessonStatus.textContent =
-                        "This lesson does not exist.";
+                    lessonTitle.textContent =
+                        "Lesson not found";
+
+                    lessonContent.textContent =
+                        "This lesson could not be found.";
+
+                    lessonCourseName.textContent = "";
 
                     return;
 
                 }
 
 
-                const lesson =
-                    lessonSnapshot.data();
+                const lesson = lessonSnapshot.data();
 
+                courseId = lesson.courseId || null;
 
-                /* ============================= */
-                /* LESSON DATA */
-                /* ============================= */
 
                 lessonTitle.textContent =
-                    lesson.title ||
-                    "Untitled Lesson";
-
-
-                lessonInstructor.textContent =
-                    `👨‍🏫 Instructor: ${
-                        lesson.instructor ||
-                        "Unknown"
-                    }`;
-
+                    lesson.title || "Untitled Lesson";
 
                 lessonContent.textContent =
                     lesson.content ||
-                    "No lesson content available.";
+                    "No content has been added to this lesson yet.";
 
 
-                lessonStatus.textContent =
-                    "";
+                // LOAD COURSE NAME
 
+                if (courseId) {
 
-                /* ============================= */
-                /* LOAD COURSE */
-                /* ============================= */
+                    const courseSnapshot = await getDoc(
+                        doc(db, "courses", courseId)
+                    );
 
-                if (lesson.courseId) {
+                    if (courseSnapshot.exists()) {
 
-                    const courseRef =
-                        doc(
-                            db,
-                            "courses",
-                            lesson.courseId
-                        );
+                        const course = courseSnapshot.data();
 
+                        const courseName =
+                            course.title || "Course";
 
-                    const courseSnapshot =
-                        await getDoc(
-                            courseRef
-                        );
+                        lessonCourseName.textContent =
+                            `📚 ${courseName} • Lesson ${lesson.lessonNumber || "1"}`;
 
+                        breadcrumbCourse.textContent =
+                            courseName;
 
-                    if (
-                        courseSnapshot.exists()
-                    ) {
+                    } else {
 
-                        const course =
-                            courseSnapshot.data();
+                        lessonCourseName.textContent =
+                            `Lesson ${lesson.lessonNumber || "1"}`;
 
-
-                        courseName.textContent =
-                            `📚 ${
-                                course.title ||
-                                "Course"
-                            }`;
+                        breadcrumbCourse.textContent =
+                            "Course";
 
                     }
+
+                } else {
+
+                    lessonCourseName.textContent =
+                        `Lesson ${lesson.lessonNumber || "1"}`;
+
+                    breadcrumbCourse.textContent =
+                        "Course";
+
+                }
+
+
+                document.title =
+                    `${lesson.title || "Lesson"} | Learning Platform`;
+
+
+                // LOAD THIS STUDENT'S PROGRESS
+
+                const progressRef = doc(
+                    db,
+                    "lessonProgress",
+                    `${user.uid}_${lessonId}`
+                );
+
+                const progressSnapshot =
+                    await getDoc(progressRef);
+
+
+                lessonLoaded = true;
+                completeButton.disabled = false;
+
+
+                if (
+                    progressSnapshot.exists() &&
+                    progressSnapshot.data().completed === true
+                ) {
+
+                    showCompleted();
 
                 }
 
@@ -293,35 +333,103 @@
                     error
                 );
 
-
-                lessonStatus.textContent =
-                    "Unable to load this lesson.";
+                lessonMessage.textContent =
+                    "Unable to load lesson or progress. Check your connection and Firebase permissions.";
 
             }
 
-        }
+        });
 
 
-        /* ============================= */
-        /* BACK BUTTON */
-        /* ============================= */
+        // MARK LESSON AS COMPLETED
 
-        document
-            .getElementById("back-btn")
-            .addEventListener(
-                "click",
-                (event) => {
+        completeButton.addEventListener(
+            "click",
+            async () => {
 
-                    event.preventDefault();
+                if (!currentUser || !lessonLoaded || !lessonId) {
+                    return;
+                }
 
-                    window.history.back();
+
+                completeButton.disabled = true;
+
+                completeButton.textContent =
+                    "Saving progress...";
+
+                lessonMessage.textContent = "";
+
+
+                try {
+
+                    await setDoc(
+                        doc(
+                            db,
+                            "lessonProgress",
+                            `${currentUser.uid}_${lessonId}`
+                        ),
+                        {
+                            userId: currentUser.uid,
+                            lessonId: lessonId,
+                            courseId: courseId,
+                            completed: true,
+                            completedAt: serverTimestamp()
+                        },
+                        {
+                            merge: true
+                        }
+                    );
+
+
+                    showCompleted();
+
+                    lessonMessage.textContent =
+                        "Your lesson progress was saved successfully!";
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Error saving lesson progress:",
+                        error
+                    );
+
+                    completeButton.disabled = false;
+
+                    completeButton.textContent =
+                        "Try Again";
+
+                    lessonMessage.textContent =
+                        "Could not save progress. Check Firebase permissions and try again.";
 
                 }
-            );
+
+            }
+        );
+
+
+        // RETURN TO COURSE
+
+        backButton.addEventListener(
+            "click",
+            () => {
+
+                if (courseId) {
+
+                    window.location.href =
+                        `course-details.html?id=${encodeURIComponent(courseId)}`;
+
+                } else {
+
+                    window.location.href = "courses.html";
+
+                }
+
+            }
+        );
 
     </script>
 
 </body>
 
 </html>
-```

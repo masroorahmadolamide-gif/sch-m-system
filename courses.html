@@ -3,80 +3,44 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <title>My Courses | Learning Platform</title>
 
-    <title>Classora - Courses</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
     <main class="dashboard">
 
-        <!-- HEADER -->
         <header class="dashboard-header">
 
             <div>
-
                 <h1>📚 My Courses</h1>
-
-                <p>
-                    Explore your available courses and start learning.
-                </p>
-
+                <p>Learn at your own pace.</p>
             </div>
 
-            <button id="back-dashboard">
+            <button id="back-dashboard" type="button">
                 ← Dashboard
             </button>
 
         </header>
 
 
-        <!-- CONTENT -->
         <section class="dashboard-content">
 
-            <!-- WELCOME -->
             <div class="welcome-card">
-
-                <h2>
-                    Available Courses 📚
-                </h2>
-
-                <p>
-                    Choose a course below and start learning with Classora.
-                </p>
-
+                <h2>Your Learning Journey 🚀</h2>
+                <p>Choose a course and continue learning.</p>
             </div>
 
-
-            <!-- COURSES -->
-            <div
-                id="courses-container"
-                class="dashboard-grid"
-            >
+            <div id="courses-container" class="dashboard-grid">
 
                 <div class="dashboard-card">
-
-                    <h3>
-                        Loading courses...
-                    </h3>
-
-                    <p>
-                        Please wait while we load your courses.
-                    </p>
-
+                    <h3>Loading courses...</h3>
+                    <p>Please wait while we load your courses.</p>
                 </div>
 
             </div>
@@ -86,324 +50,425 @@
     </main>
 
 
-    <!-- FIREBASE -->
     <script type="module">
 
         import {
             initializeApp
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-
         import {
             getAuth,
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-
         import {
             getFirestore,
             collection,
-            getDocs
+            getDocs,
+            query,
+            where
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-        // =============================
-        // FIREBASE CONFIG
-        // =============================
-
         const firebaseConfig = {
-
-            apiKey:
-                "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
-
-            authDomain:
-                "sch-m-system.firebaseapp.com",
-
-            projectId:
-                "sch-m-system",
-
-            storageBucket:
-                "sch-m-system.firebasestorage.app",
-
-            messagingSenderId:
-                "24559011089",
-
-            appId:
-                "1:24559011089:web:8009d445b45223b53e38b0",
-
-            measurementId:
-                "G-4J1V0208LJ"
-
+            apiKey: "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
+            authDomain: "sch-m-system.firebaseapp.com",
+            projectId: "sch-m-system",
+            storageBucket: "sch-m-system.firebasestorage.app",
+            messagingSenderId: "24559011089",
+            appId: "1:24559011089:web:8009d445b45223b53e38b0",
+            measurementId: "G-4J1V0208LJ"
         };
 
 
-        // =============================
-        // INITIALIZE FIREBASE
-        // =============================
+        const app = initializeApp(firebaseConfig);
 
-        const app =
-            initializeApp(
-                firebaseConfig
-            );
+        const auth = getAuth(app);
 
-        const auth =
-            getAuth(app);
-
-        const db =
-            getFirestore(app);
-
-
-        // =============================
-        // ELEMENTS
-        // =============================
+        const db = getFirestore(app);
 
         const coursesContainer =
-            document.getElementById(
-                "courses-container"
-            );
+            document.getElementById("courses-container");
 
 
-        const backDashboard =
-            document.getElementById(
-                "back-dashboard"
-            );
+        onAuthStateChanged(auth, async (user) => {
+
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            await loadCourses(user.uid);
+
+        });
 
 
-        // =============================
-        // LOAD COURSES
-        // =============================
+        async function loadCourses(userId) {
 
-        onAuthStateChanged(
-            auth,
-            async (user) => {
+            coursesContainer.innerHTML = "";
 
-                if (!user) {
+            try {
 
-                    window.location.href =
-                        "index.html";
+                const [
+                    coursesSnapshot,
+                    lessonsSnapshot,
+                    progressSnapshot
+                ] = await Promise.all([
+
+                    getDocs(
+                        collection(db, "courses")
+                    ),
+
+                    getDocs(
+                        collection(db, "lessons")
+                    ),
+
+                    getDocs(
+                        query(
+                            collection(db, "lessonProgress"),
+                            where("userId", "==", userId)
+                        )
+                    )
+
+                ]);
+
+
+                if (coursesSnapshot.empty) {
+
+                    const card =
+                        document.createElement("div");
+
+                    card.className = "dashboard-card";
+
+                    const title =
+                        document.createElement("h3");
+
+                    title.textContent = "No courses yet";
+
+                    const text =
+                        document.createElement("p");
+
+                    text.textContent =
+                        "Courses will appear here when instructors create them.";
+
+                    card.append(title, text);
+
+                    coursesContainer.appendChild(card);
 
                     return;
 
                 }
 
 
-                try {
+                // GROUP LESSONS BY COURSE
 
-                    coursesContainer.innerHTML = `
-                        <div class="dashboard-card">
+                const lessonsByCourse = new Map();
 
-                            <h3>
-                                Loading courses...
-                            </h3>
+                lessonsSnapshot.forEach((lessonDoc) => {
 
-                            <p>
-                                Please wait.
-                            </p>
+                    const lesson = lessonDoc.data();
 
-                        </div>
-                    `;
+                    if (!lesson.courseId) return;
 
-
-                    const coursesSnapshot =
-                        await getDocs(
-                            collection(
-                                db,
-                                "courses"
-                            )
+                    if (!lessonsByCourse.has(lesson.courseId)) {
+                        lessonsByCourse.set(
+                            lesson.courseId,
+                            []
                         );
+                    }
+
+                    lessonsByCourse
+                        .get(lesson.courseId)
+                        .push({
+                            id: lessonDoc.id,
+                            ...lesson
+                        });
+
+                });
 
 
-                    coursesContainer.innerHTML =
-                        "";
+                // GROUP COMPLETED LESSONS BY COURSE
 
+                const completedByCourse = new Map();
 
-                    // =============================
-                    // NO COURSES
-                    // =============================
+                progressSnapshot.forEach((progressDoc) => {
+
+                    const progress = progressDoc.data();
 
                     if (
-                        coursesSnapshot.empty
+                        progress.completed !== true ||
+                        !progress.courseId ||
+                        !progress.lessonId
                     ) {
-
-                        coursesContainer.innerHTML = `
-                            <div class="dashboard-card">
-
-                                <h3>
-                                    No courses yet 📚
-                                </h3>
-
-                                <p>
-                                    Courses created by instructors will appear here.
-                                </p>
-
-                            </div>
-                        `;
-
                         return;
+                    }
+
+                    if (!completedByCourse.has(progress.courseId)) {
+                        completedByCourse.set(
+                            progress.courseId,
+                            new Set()
+                        );
+                    }
+
+                    completedByCourse
+                        .get(progress.courseId)
+                        .add(progress.lessonId);
+
+                });
+
+
+                // DISPLAY EACH COURSE
+
+                coursesSnapshot.forEach((courseDoc) => {
+
+                    const course = courseDoc.data();
+
+                    const courseId = courseDoc.id;
+
+                    const courseLessons =
+                        lessonsByCourse.get(courseId) || [];
+
+                    const completedLessons =
+                        completedByCourse.get(courseId) || new Set();
+
+
+                    // Count only completed lessons
+                    // that actually belong to this course.
+
+                    const totalLessons = courseLessons.length;
+
+                    const completedCount =
+                        courseLessons.filter(
+                            lesson =>
+                                completedLessons.has(lesson.id)
+                        ).length;
+
+
+                    const percentage = totalLessons > 0
+                        ? Math.round(
+                            (completedCount / totalLessons) * 100
+                        )
+                        : 0;
+
+
+                    const card =
+                        document.createElement("div");
+
+                    card.className = "dashboard-card course-card";
+
+
+                    const title =
+                        document.createElement("h3");
+
+                    title.textContent =
+                        `📚 ${course.title || "Untitled Course"}`;
+
+
+                    const description =
+                        document.createElement("p");
+
+                    description.textContent =
+                        course.description ||
+                        "No course description available.";
+
+
+                    const instructor =
+                        document.createElement("p");
+
+                    instructor.className = "course-instructor";
+
+                    instructor.textContent =
+                        `👨‍🏫 Instructor: ${
+                            course.instructor || "Not assigned"
+                        }`;
+
+
+                    // PROGRESS SECTION
+
+                    const progressSection =
+                        document.createElement("div");
+
+                    progressSection.className =
+                        "course-progress-section";
+
+
+                    const progressInfo =
+                        document.createElement("div");
+
+                    progressInfo.className =
+                        "course-progress-info";
+
+
+                    const progressLabel =
+                        document.createElement("span");
+
+                    progressLabel.textContent =
+                        "Your progress";
+
+
+                    const progressPercentage =
+                        document.createElement("strong");
+
+                    progressPercentage.textContent =
+                        `${percentage}%`;
+
+
+                    progressInfo.append(
+                        progressLabel,
+                        progressPercentage
+                    );
+
+
+                    const progressTrack =
+                        document.createElement("div");
+
+                    progressTrack.className =
+                        "progress-track";
+
+
+                    progressTrack.setAttribute(
+                        "role",
+                        "progressbar"
+                    );
+
+                    progressTrack.setAttribute(
+                        "aria-valuemin",
+                        "0"
+                    );
+
+                    progressTrack.setAttribute(
+                        "aria-valuemax",
+                        "100"
+                    );
+
+                    progressTrack.setAttribute(
+                        "aria-valuenow",
+                        String(percentage)
+                    );
+
+
+                    const progressBar =
+                        document.createElement("div");
+
+                    progressBar.className =
+                        "progress-bar";
+
+                    progressBar.style.width =
+                        `${percentage}%`;
+
+
+                    progressTrack.appendChild(
+                        progressBar
+                    );
+
+
+                    const progressCount =
+                        document.createElement("p");
+
+                    progressCount.className =
+                        "course-progress-count";
+
+
+                    if (totalLessons === 0) {
+
+                        progressCount.textContent =
+                            "No lessons available yet.";
+
+                    } else {
+
+                        progressCount.textContent =
+                            `${completedCount} of ${totalLessons} lessons completed`;
 
                     }
 
 
-                    // =============================
-                    // DISPLAY COURSES
-                    // =============================
-
-                    coursesSnapshot.forEach(
-                        (courseDoc) => {
-
-                            const course =
-                                courseDoc.data();
-
-
-                            // COURSE CARD
-
-                            const card =
-                                document.createElement(
-                                    "div"
-                                );
-
-                            card.className =
-                                "dashboard-card";
-
-
-                            // COURSE TITLE
-
-                            const title =
-                                document.createElement(
-                                    "h3"
-                                );
-
-                            title.textContent =
-                                `📚 ${
-                                    course.title ||
-                                    "Untitled Course"
-                                }`;
-
-
-                            // DESCRIPTION
-
-                            const description =
-                                document.createElement(
-                                    "p"
-                                );
-
-                            description.textContent =
-                                course.description ||
-                                "No description available.";
-
-
-                            // INSTRUCTOR
-
-                            const instructor =
-                                document.createElement(
-                                    "p"
-                                );
-
-                            instructor.textContent =
-                                `👨‍🏫 Instructor: ${
-                                    course.instructorName ||
-                                    "Not assigned"
-                                }`;
-
-
-                            // COURSE BUTTON
-
-                            const button =
-                                document.createElement(
-                                    "button"
-                                );
-
-                            button.textContent =
-                                "Open Course →";
-
-
-                            button.addEventListener(
-                                "click",
-                                () => {
-
-                                    window.location.href =
-                                        `course-details.html?id=${courseDoc.id}`;
-
-                                }
-                            );
-
-
-                            // APPEND CONTENT
-
-                            card.appendChild(
-                                title
-                            );
-
-                            card.appendChild(
-                                description
-                            );
-
-                            card.appendChild(
-                                instructor
-                            );
-
-                            card.appendChild(
-                                button
-                            );
-
-
-                            coursesContainer.appendChild(
-                                card
-                            );
-
-                        }
+                    progressSection.append(
+                        progressInfo,
+                        progressTrack,
+                        progressCount
                     );
 
 
-                } catch (error) {
+                    // OPEN COURSE BUTTON
 
-                    console.error(
-                        "Error loading courses:",
-                        error
+                    const button =
+                        document.createElement("button");
+
+                    button.type = "button";
+
+                    button.textContent =
+                        "Open Course →";
+
+
+                    button.addEventListener("click", () => {
+
+                        window.location.href =
+                            `course-details.html?id=${encodeURIComponent(courseId)}`;
+
+                    });
+
+
+                    card.append(
+                        title,
+                        description,
+                        instructor,
+                        progressSection,
+                        button
                     );
 
 
-                    coursesContainer.innerHTML = `
-                        <div class="dashboard-card">
+                    coursesContainer.appendChild(card);
 
-                            <h3>
-                                Unable to load courses ❌
-                            </h3>
+                });
 
-                            <p>
-                                Something went wrong while loading the courses.
-                            </p>
 
-                            <p>
-                                Please refresh the page and try again.
-                            </p>
+            } catch (error) {
 
-                        </div>
-                    `;
+                console.error(
+                    "Error loading courses and progress:",
+                    error
+                );
 
-                }
+                coursesContainer.innerHTML = "";
+
+                const errorCard =
+                    document.createElement("div");
+
+                errorCard.className = "dashboard-card";
+
+                const title =
+                    document.createElement("h3");
+
+                title.textContent =
+                    "Unable to load courses";
+
+
+                const text =
+                    document.createElement("p");
+
+                text.textContent =
+                    "Please check your internet connection and Firebase permissions, then refresh the page.";
+
+
+                errorCard.append(title, text);
+
+                coursesContainer.appendChild(errorCard);
 
             }
-        );
+
+        }
 
 
-        // =============================
-        // BACK TO DASHBOARD
-        // =============================
+        document
+            .getElementById("back-dashboard")
+            .addEventListener("click", () => {
 
-        backDashboard.addEventListener(
-            "click",
-            () => {
+                window.location.href = "dashboard.html";
 
-                window.location.href =
-                    "dashboard.html";
-
-            }
-        );
+            });
 
     </script>
 
 </body>
 
 </html>
-```

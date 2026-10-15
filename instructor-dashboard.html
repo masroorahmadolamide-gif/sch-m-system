@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Instructor Dashboard</title>
-
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -17,142 +15,108 @@
 
         <!-- HEADER -->
         <header class="dashboard-header">
-
             <div>
                 <h1>Instructor Dashboard</h1>
-                <p id="instructor-name">Loading...</p>
+                <p id="instructor-name">Loading instructor...</p>
             </div>
 
-            <button id="logout-btn">
-                Logout
-            </button>
-
+            <button type="button" id="logout-btn">Logout</button>
         </header>
-
 
         <!-- WELCOME -->
         <section class="welcome-card">
-
-            <h2>Welcome, Instructor 👋</h2>
-
+            <h2 id="welcome-heading">Welcome, Instructor 👋</h2>
             <p>
                 Create courses, add lessons and manage your learning content.
             </p>
-
         </section>
-
 
         <div class="dashboard-content">
 
             <!-- CREATE COURSE -->
             <section class="dashboard-card">
-
                 <h3>Create New Course</h3>
 
                 <form id="course-form">
+                    <label for="course-title">Course Title</label>
+                    <input
+                        type="text"
+                        id="course-title"
+                        placeholder="e.g. Mathematics"
+                        required
+                    >
 
-                    <label for="course-title">
-                        Course Title
-                    </label>
+                    <label for="course-description">Course Description</label>
+                    <textarea
+                        id="course-description"
+                        placeholder="Describe this course..."
+                        required
+                    ></textarea>
 
-                    <input type="text" id="course-title" placeholder="e.g. Mathematics" required>
-
-                    <label for="course-description">
-                        Course Description
-                    </label>
-
-                    <textarea id="course-description" placeholder="Describe this course..." required></textarea>
-
-                    <button type="submit">
-                        Create Course
-                    </button>
-
+                    <button type="submit">Create Course</button>
                 </form>
 
-                <p id="course-message"></p>
-
+                <p id="course-message" role="status"></p>
             </section>
-
 
             <!-- MY COURSES -->
             <section class="dashboard-card">
-
                 <h3>My Courses</h3>
 
                 <div id="my-courses">
-
-                    <p>
-                        Loading courses...
-                    </p>
-
+                    <p>Loading courses...</p>
                 </div>
-
             </section>
-
 
             <!-- CREATE LESSON -->
             <section class="dashboard-card">
-
                 <h3>Create New Lesson</h3>
 
                 <form id="lesson-form">
-
-                    <label for="course-select">
-                        Select Course
-                    </label>
-
+                    <label for="course-select">Select Course</label>
                     <select id="course-select" required>
-
-                        <option value="">
-                            Select a course
-                        </option>
-
+                        <option value="">Select a course</option>
                     </select>
 
+                    <label for="lesson-title">Lesson Title</label>
+                    <input
+                        type="text"
+                        id="lesson-title"
+                        placeholder="e.g. Introduction to Mathematics"
+                        required
+                    >
 
-                    <label for="lesson-title">
-                        Lesson Title
-                    </label>
+                    <label for="lesson-content">Lesson Content</label>
+                    <textarea
+                        id="lesson-content"
+                        placeholder="Write the lesson content here..."
+                        required
+                    ></textarea>
 
-                    <input type="text" id="lesson-title" placeholder="e.g. Introduction to Mathematics" required>
-
-
-                    <label for="lesson-content">
-                        Lesson Content
-                    </label>
-
-                    <textarea id="lesson-content" placeholder="Write the lesson content here..." required></textarea>
-
-
-                    <button type="submit">
-                        Create Lesson
-                    </button>
-
+                    <button type="submit">Create Lesson</button>
                 </form>
 
-                <p id="lesson-message"></p>
-
+                <p id="lesson-message" role="status"></p>
             </section>
 
         </div>
-
     </main>
 
-
-    <!-- FIREBASE -->
     <script type="module">
+
+        // =====================================
+        // FIREBASE IMPORTS
+        // =====================================
 
         import {
             initializeApp
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
 
         import {
             getAuth,
             onAuthStateChanged,
             signOut
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
 
         import {
             getFirestore,
@@ -169,1346 +133,738 @@
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-        // =============================
-        // FIREBASE CONFIG
-        // =============================
+        // =====================================
+        // FIREBASE CONFIGURATION
+        // =====================================
 
         const firebaseConfig = {
-
-            apiKey:
-                "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
-
-            authDomain:
-                "sch-m-system.firebaseapp.com",
-
-            projectId:
-                "sch-m-system",
-
-            storageBucket:
-                "sch-m-system.firebasestorage.app",
-
-            messagingSenderId:
-                "24559011089",
-
-            appId:
-                "1:24559011089:web:8009d445b45223b53e38b0",
-
-            measurementId:
-                "G-4J1V0208LJ"
+            apiKey: "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
+            authDomain: "sch-m-system.firebaseapp.com",
+            projectId: "sch-m-system",
+            storageBucket: "sch-m-system.firebasestorage.app",
+            messagingSenderId: "24559011089",
+            appId: "1:24559011089:web:8009d445b45223b53e38b0",
+            measurementId: "G-4J1V0208LJ"
         };
 
 
-        // =============================
+        // =====================================
         // INITIALIZE FIREBASE
-        // =============================
+        // =====================================
 
-        const app =
-            initializeApp(firebaseConfig);
-
-        const auth =
-            getAuth(app);
-
-        const db =
-            getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
 
-        // =============================
-        // ELEMENTS
-        // =============================
+        // =====================================
+        // HTML ELEMENTS
+        // =====================================
 
-        const instructorName =
-            document.getElementById(
-                "instructor-name"
-            );
+        const instructorName = document.getElementById("instructor-name");
+        const welcomeHeading = document.getElementById("welcome-heading");
+        const logoutBtn = document.getElementById("logout-btn");
 
-        const logoutBtn =
-            document.getElementById(
-                "logout-btn"
-            );
+        const courseForm = document.getElementById("course-form");
+        const courseTitle = document.getElementById("course-title");
+        const courseDescription = document.getElementById("course-description");
+        const courseMessage = document.getElementById("course-message");
+        const myCourses = document.getElementById("my-courses");
 
-        const courseForm =
-            document.getElementById(
-                "course-form"
-            );
+        const courseSelect = document.getElementById("course-select");
 
-        const courseTitle =
-            document.getElementById(
-                "course-title"
-            );
+        const lessonForm = document.getElementById("lesson-form");
+        const lessonTitle = document.getElementById("lesson-title");
+        const lessonContent = document.getElementById("lesson-content");
+        const lessonMessage = document.getElementById("lesson-message");
 
-        const courseDescription =
-            document.getElementById(
-                "course-description"
-            );
 
-        const courseMessage =
-            document.getElementById(
-                "course-message"
-            );
-
-        const myCourses =
-            document.getElementById(
-                "my-courses"
-            );
-
-        const courseSelect =
-            document.getElementById(
-                "course-select"
-            );
-
-        const lessonForm =
-            document.getElementById(
-                "lesson-form"
-            );
-
-        const lessonTitle =
-            document.getElementById(
-                "lesson-title"
-            );
-
-        const lessonContent =
-            document.getElementById(
-                "lesson-content"
-            );
-
-        const lessonMessage =
-            document.getElementById(
-                "lesson-message"
-            );
-
+        // =====================================
+        // CURRENT INSTRUCTOR
+        // =====================================
 
         let currentUser = null;
+        let currentInstructorName = "Instructor";
 
 
-        // =============================
-        // AUTHENTICATION
-        // =============================
+        // =====================================
+        // DISPLAY MESSAGES SAFELY
+        // =====================================
 
-        onAuthStateChanged(
-            auth,
-            async (user) => {
-
-                if (!user) {
-
-                    window.location.href =
-                        "index.html";
-
-                    return;
-                }
+        function showMessage(element, message, isError = false) {
+            element.textContent = message;
+            element.style.color = isError ? "#d60000" : "#16803d";
+        }
 
 
-                currentUser = user;
+        // =====================================
+        // AUTHENTICATION AND INSTRUCTOR PROFILE
+        // =====================================
 
+        onAuthStateChanged(auth, async (user) => {
 
-                try {
-
-                    const userRef =
-                        doc(
-                            db,
-                            "users",
-                            user.uid
-                        );
-
-
-                    const userSnap =
-                        await getDoc(userRef);
-
-
-                    if (!userSnap.exists()) {
-
-                        alert(
-                            "User profile not found."
-                        );
-
-                        await signOut(auth);
-
-                        return;
-                    }
-
-
-                    const userData =
-                        userSnap.data();
-
-
-                    // CHECK INSTRUCTOR ROLE
-
-                    if (
-                        userData.role !==
-                        "instructor"
-                    ) {
-
-                        alert(
-                            "You do not have instructor access."
-                        );
-
-                        window.location.href =
-                            "dashboard.html";
-
-                        return;
-                    }
-
-
-                    instructorName.textContent =
-                        userData.name ||
-                        user.email;
-
-
-                    loadCourses(
-                        user.uid
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Authentication error:",
-                        error
-                    );
-
-                    alert(
-                        error.message
-                    );
-
-                }
-
+            if (!user) {
+                window.location.replace("index.html");
+                return;
             }
-        );
 
-
-        // =============================
-        // LOGOUT
-        // =============================
-
-        logoutBtn.addEventListener(
-            "click",
-            async () => {
-
-                await signOut(auth);
-
-                window.location.href =
-                    "index.html";
-
-            }
-        );
-
-
-        // =============================
-        // CREATE COURSE
-        // =============================
-
-        courseForm.addEventListener(
-            "submit",
-            async (event) => {
-
-                event.preventDefault();
-
-
-                const title =
-                    courseTitle.value.trim();
-
-                const description =
-                    courseDescription.value.trim();
-
-
-                if (
-                    !title ||
-                    !description
-                ) {
-
-                    courseMessage.textContent =
-                        "Please fill in all fields.";
-
-                    return;
-                }
-
-
-                try {
-
-                    courseMessage.textContent =
-                        "Creating course...";
-
-
-                    await addDoc(
-                        collection(
-                            db,
-                            "courses"
-                        ),
-                        {
-
-                            title: title,
-
-                            description:
-                                description,
-
-                            instructorId:
-                                currentUser.uid,
-
-                            instructorName:
-                                instructorName.textContent,
-
-                            createdAt:
-                                serverTimestamp()
-
-                        }
-                    );
-
-
-                    courseMessage.textContent =
-                        "Course created successfully! ✅";
-
-
-                    courseForm.reset();
-
-
-                    loadCourses(
-                        currentUser.uid
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Error creating course:",
-                        error
-                    );
-
-                    courseMessage.textContent =
-                        `${error.code}: ${error.message}`;
-
-                }
-
-            }
-        );
-
-
-        // =============================
-        // LOAD COURSES
-        // =============================
-
-        async function loadCourses(
-            instructorId
-        ) {
+            currentUser = user;
 
             try {
 
-                myCourses.innerHTML =
-                    "<p>Loading courses...</p>";
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
 
+                if (!userSnap.exists()) {
+                    instructorName.textContent = "Profile not found";
 
-                courseSelect.innerHTML =
-                    `
-                    <option value="">
-                        Select a course
-                    </option>
-                    `;
-
-
-                const coursesQuery =
-                    query(
-                        collection(
-                            db,
-                            "courses"
-                        ),
-                        where(
-                            "instructorId",
-                            "==",
-                            instructorId
-                        )
+                    alert(
+                        "Your user profile was not found in Firestore. " +
+                        "Please check the users collection in Firebase."
                     );
 
+                    await signOut(auth);
+                    window.location.replace("index.html");
+                    return;
+                }
 
-                const snapshot =
-                    await getDocs(
-                        coursesQuery
-                    );
+                const userData = userSnap.data();
+
+                // Only instructors can access this dashboard.
+                if (userData.role !== "instructor") {
+                    alert("You do not have instructor access.");
+                    window.location.replace("dashboard.html");
+                    return;
+                }
+
+                // Use the saved Firestore name first.
+                const savedName =
+                    typeof userData.name === "string"
+                        ? userData.name.trim()
+                        : "";
+
+                currentInstructorName =
+                    savedName ||
+                    user.displayName ||
+                    user.email?.split("@")[0] ||
+                    "Instructor";
+
+                // Display the name in the header.
+                instructorName.textContent =
+                    "Logged in as " + currentInstructorName;
+
+                // Display the name in the welcome section.
+                welcomeHeading.textContent =
+                    "Welcome, " + currentInstructorName + " 👋";
+
+                // Load the instructor's courses.
+                await loadCourses(user.uid);
+
+            } catch (error) {
+
+                console.error("Authentication error:", error);
+
+                instructorName.textContent =
+                    "Unable to load instructor profile";
+
+                alert(
+                    "Unable to load your instructor profile. " +
+                    "Please check your internet connection and Firebase permissions."
+                );
+            }
+        });
 
 
-                myCourses.innerHTML =
-                    "";
+        // =====================================
+        // LOGOUT
+        // =====================================
+
+        logoutBtn.addEventListener("click", async () => {
+
+            try {
+                await signOut(auth);
+                window.location.replace("index.html");
+
+            } catch (error) {
+                console.error("Logout error:", error);
+                alert("Unable to log out. Please try again.");
+            }
+        });
 
 
-                if (
-                    snapshot.empty
-                ) {
+        // =====================================
+        // CREATE COURSE
+        // =====================================
 
-                    myCourses.innerHTML =
-                        `
+        courseForm.addEventListener("submit", async (event) => {
+
+            event.preventDefault();
+
+            if (!currentUser) {
+                showMessage(courseMessage, "Please log in first.", true);
+                return;
+            }
+
+            const title = courseTitle.value.trim();
+            const description = courseDescription.value.trim();
+
+            if (!title || !description) {
+                showMessage(
+                    courseMessage,
+                    "Please fill in all course fields.",
+                    true
+                );
+                return;
+            }
+
+            try {
+
+                showMessage(courseMessage, "Creating course...");
+
+                await addDoc(collection(db, "courses"), {
+                    title: title,
+                    description: description,
+                    instructorId: currentUser.uid,
+                    instructorName: currentInstructorName,
+                    createdAt: serverTimestamp()
+                });
+
+                showMessage(
+                    courseMessage,
+                    "Course created successfully! ✅"
+                );
+
+                courseForm.reset();
+
+                await loadCourses(currentUser.uid);
+
+            } catch (error) {
+
+                console.error("Error creating course:", error);
+
+                showMessage(
+                    courseMessage,
+                    "Unable to create course: " + error.message,
+                    true
+                );
+            }
+        });
+
+
+        // =====================================
+        // LOAD INSTRUCTOR COURSES
+        // =====================================
+
+        async function loadCourses(instructorId) {
+
+            myCourses.innerHTML = "<p>Loading courses...</p>";
+
+            courseSelect.innerHTML =
+                '<option value="">Select a course</option>';
+
+            try {
+
+                const coursesQuery = query(
+                    collection(db, "courses"),
+                    where("instructorId", "==", instructorId)
+                );
+
+                const snapshot = await getDocs(coursesQuery);
+
+                myCourses.innerHTML = "";
+
+                if (snapshot.empty) {
+
+                    myCourses.innerHTML = `
                         <div class="no-lessons">
                             You have not created any courses yet.
                         </div>
-                        `;
+                    `;
 
                     return;
                 }
 
+                // Use a loop so asynchronous lesson loading finishes correctly.
+                for (const courseDoc of snapshot.docs) {
 
-                snapshot.forEach(
-                    async (courseDoc) => {
+                    const course = courseDoc.data();
 
-                        const course =
-                            courseDoc.data();
+                    // -----------------------------
+                    // COURSE CARD
+                    // -----------------------------
 
+                    const courseCard = document.createElement("div");
+                    courseCard.className = "dashboard-card";
 
-                        // =============================
-                        // COURSE CARD
-                        // =============================
+                    const title = document.createElement("h3");
+                    title.textContent = course.title || "Untitled Course";
 
-                        const courseCard =
-                            document.createElement(
-                                "div"
-                            );
+                    const description = document.createElement("p");
+                    description.textContent =
+                        course.description || "No description available.";
 
-                        courseCard.className =
-                            "dashboard-card";
-
-
-                        const title =
-                            document.createElement(
-                                "h3"
-                            );
-
-                        title.textContent =
-                            course.title ||
-                            "Untitled Course";
+                    courseCard.appendChild(title);
+                    courseCard.appendChild(description);
 
 
-                        const description =
-                            document.createElement(
-                                "p"
-                            );
+                    // -----------------------------
+                    // COURSE ACTIONS
+                    // -----------------------------
 
-                        description.textContent =
-                            course.description ||
-                            "No description";
+                    const courseActions = document.createElement("div");
+                    courseActions.className = "course-actions";
 
+                    // EDIT COURSE
+                    const editCourseButton = document.createElement("button");
+                    editCourseButton.type = "button";
+                    editCourseButton.textContent = "✏️ Edit Course";
 
-                        courseCard.appendChild(
-                            title
+                    editCourseButton.addEventListener("click", async () => {
+
+                        const newTitle = prompt(
+                            "Enter the new course title:",
+                            course.title || ""
                         );
 
-                        courseCard.appendChild(
-                            description
+                        if (newTitle === null) return;
+
+                        const newDescription = prompt(
+                            "Enter the new course description:",
+                            course.description || ""
                         );
 
+                        if (newDescription === null) return;
 
-                        // =============================
-                        // COURSE ACTIONS
-                        // =============================
+                        const cleanTitle = newTitle.trim();
+                        const cleanDescription = newDescription.trim();
 
-                        const courseActions =
-                            document.createElement(
-                                "div"
-                            );
+                        if (!cleanTitle || !cleanDescription) {
+                            alert("Course title and description cannot be empty.");
+                            return;
+                        }
 
-                        courseActions.className =
-                            "course-actions";
+                        await editCourse(
+                            courseDoc.id,
+                            cleanTitle,
+                            cleanDescription
+                        );
+                    });
 
-
-                        // =============================
-                        // EDIT COURSE
-                        // =============================
-
-                        const editCourseButton =
-                            document.createElement(
-                                "button"
-                            );
-
-                        editCourseButton.className =
-                            "edit-course-btn";
-
-                        editCourseButton.textContent =
-                            "✏️ Edit Course";
+                    courseActions.appendChild(editCourseButton);
 
 
-                        editCourseButton.addEventListener(
-                            "click",
-                            async () => {
+                    // DELETE COURSE
+                    const deleteCourseButton = document.createElement("button");
+                    deleteCourseButton.type = "button";
+                    deleteCourseButton.textContent = "🗑️ Delete Course";
 
-                                const newTitle =
-                                    prompt(
-                                        "Enter the new course title:",
-                                        course.title ||
-                                        ""
-                                    );
+                    deleteCourseButton.addEventListener("click", async () => {
 
-
-                                if (
-                                    newTitle ===
-                                    null
-                                ) {
-
-                                    return;
-                                }
-
-
-                                const newDescription =
-                                    prompt(
-                                        "Enter the new course description:",
-                                        course.description ||
-                                        ""
-                                    );
-
-
-                                if (
-                                    newDescription ===
-                                    null
-                                ) {
-
-                                    return;
-                                }
-
-
-                                const cleanTitle =
-                                    newTitle.trim();
-
-
-                                const cleanDescription =
-                                    newDescription.trim();
-
-
-                                if (
-                                    !cleanTitle ||
-                                    !cleanDescription
-                                ) {
-
-                                    alert(
-                                        "Course title and description cannot be empty."
-                                    );
-
-                                    return;
-                                }
-
-
-                                await editCourse(
-                                    courseDoc.id,
-                                    cleanTitle,
-                                    cleanDescription
-                                );
-
-                            }
+                        const confirmed = confirm(
+                            'Are you sure you want to delete "' +
+                            (course.title || "this course") +
+                            '"? This will not automatically delete its lessons.'
                         );
 
+                        if (!confirmed) return;
 
-                        courseActions.appendChild(
-                            editCourseButton
+                        await deleteCourse(courseDoc.id);
+                    });
+
+                    courseActions.appendChild(deleteCourseButton);
+                    courseCard.appendChild(courseActions);
+
+
+                    // -----------------------------
+                    // COURSE LESSONS
+                    // -----------------------------
+
+                    const lessonsContainer = document.createElement("div");
+                    lessonsContainer.className = "instructor-lessons";
+
+                    const lessonsHeading = document.createElement("strong");
+                    lessonsHeading.textContent = "Lessons";
+
+                    lessonsContainer.appendChild(lessonsHeading);
+
+                    try {
+
+                        const lessonsQuery = query(
+                            collection(db, "lessons"),
+                            where("courseId", "==", courseDoc.id),
+                            where("instructorId", "==", instructorId)
                         );
 
+                        const lessonsSnapshot = await getDocs(lessonsQuery);
 
-                        // =============================
-                        // DELETE COURSE
-                        // =============================
+                        if (lessonsSnapshot.empty) {
 
-                        const deleteCourseButton =
-                            document.createElement(
-                                "button"
-                            );
+                            const noLessons = document.createElement("p");
+                            noLessons.className = "no-lessons";
+                            noLessons.textContent = "No lessons created yet.";
 
-                        deleteCourseButton.className =
-                            "delete-course-btn";
+                            lessonsContainer.appendChild(noLessons);
 
-                        deleteCourseButton.textContent =
-                            "🗑️ Delete Course";
+                        } else {
 
+                            for (const lessonDoc of lessonsSnapshot.docs) {
 
-                        deleteCourseButton.addEventListener(
-                            "click",
-                            async () => {
+                                const lesson = lessonDoc.data();
 
-                                const confirmed =
-                                    confirm(
-                                        `Are you sure you want to delete "${course.title}"?`
-                                    );
+                                const lessonItem = document.createElement("div");
+                                lessonItem.className = "instructor-lesson-item";
 
+                                const lessonHeading = document.createElement("strong");
+                                lessonHeading.textContent =
+                                    lesson.title || "Untitled Lesson";
 
-                                if (!confirmed) {
+                                const lessonPreview = document.createElement("p");
 
-                                    return;
-                                }
+                                const preview = lesson.content || "";
 
+                                lessonPreview.textContent =
+                                    preview.length > 120
+                                        ? preview.substring(0, 120) + "..."
+                                        : preview;
 
-                                await deleteCourse(
-                                    courseDoc.id
-                                );
-
-                            }
-                        );
+                                const lessonActions = document.createElement("div");
+                                lessonActions.style.marginTop = "12px";
 
 
-                        courseActions.appendChild(
-                            deleteCourseButton
-                        );
+                                // OPEN LESSON
+                                const openLessonButton =
+                                    document.createElement("button");
+
+                                openLessonButton.type = "button";
+                                openLessonButton.textContent = "Open Lesson →";
+
+                                openLessonButton.addEventListener("click", () => {
+                                    window.location.href =
+                                        "lesson.html?id=" +
+                                        encodeURIComponent(lessonDoc.id);
+                                });
+
+                                lessonActions.appendChild(openLessonButton);
 
 
-                        courseCard.appendChild(
-                            courseActions
-                        );
+                                // EDIT LESSON
+                                const editLessonButton =
+                                    document.createElement("button");
 
+                                editLessonButton.type = "button";
+                                editLessonButton.textContent = "✏️ Edit Lesson";
+                                editLessonButton.style.marginLeft = "8px";
 
-                        // =============================
-                        // LESSONS
-                        // =============================
+                                editLessonButton.addEventListener(
+                                    "click",
+                                    async () => {
 
-                        const lessonsContainer =
-                            document.createElement(
-                                "div"
-                            );
+                                        const newTitle = prompt(
+                                            "Enter the new lesson title:",
+                                            lesson.title || ""
+                                        );
 
-                        lessonsContainer.className =
-                            "instructor-lessons";
+                                        if (newTitle === null) return;
 
+                                        const newContent = prompt(
+                                            "Enter the new lesson content:",
+                                            lesson.content || ""
+                                        );
 
-                        const lessonsTitle =
-                            document.createElement(
-                                "strong"
-                            );
+                                        if (newContent === null) return;
 
-                        lessonsTitle.textContent =
-                            "Lessons";
+                                        const cleanTitle = newTitle.trim();
+                                        const cleanContent = newContent.trim();
 
-
-                        lessonsContainer.appendChild(
-                            lessonsTitle
-                        );
-
-
-                        try {
-
-                            const lessonsQuery =
-                                query(
-                                    collection(
-                                        db,
-                                        "lessons"
-                                    ),
-
-                                    where(
-                                        "courseId",
-                                        "==",
-                                        courseDoc.id
-                                    ),
-
-                                    where(
-                                        "instructorId",
-                                        "==",
-                                        instructorId
-                                    )
-                                );
-
-
-                            const lessonsSnapshot =
-                                await getDocs(
-                                    lessonsQuery
-                                );
-
-
-                            if (
-                                lessonsSnapshot.empty
-                            ) {
-
-                                const noLessons =
-                                    document.createElement(
-                                        "div"
-                                    );
-
-                                noLessons.className =
-                                    "no-lessons";
-
-                                noLessons.textContent =
-                                    "No lessons created yet.";
-
-                                lessonsContainer.appendChild(
-                                    noLessons
-                                );
-
-                            } else {
-
-                                lessonsSnapshot.forEach(
-                                    (lessonDoc) => {
-
-                                        const lesson =
-                                            lessonDoc.data();
-
-
-                                        const lessonItem =
-                                            document.createElement(
-                                                "div"
+                                        if (!cleanTitle || !cleanContent) {
+                                            alert(
+                                                "Lesson title and content cannot be empty."
                                             );
+                                            return;
+                                        }
 
-                                        lessonItem.className =
-                                            "instructor-lesson-item";
-
-
-                                        const lessonHeading =
-                                            document.createElement(
-                                                "strong"
-                                            );
-
-                                        lessonHeading.textContent =
-                                            lesson.title ||
-                                            "Untitled Lesson";
-
-
-                                        const lessonPreview =
-                                            document.createElement(
-                                                "p"
-                                            );
-
-
-                                        const preview =
-                                            lesson.content ||
-                                            "";
-
-
-                                        lessonPreview.textContent =
-                                            preview.length >
-                                                120
-                                                ? preview.substring(
-                                                    0,
-                                                    120
-                                                ) + "..."
-                                                : preview;
-
-
-                                        // =============================
-                                        // LESSON ACTIONS
-                                        // =============================
-
-                                        const lessonActions =
-                                            document.createElement(
-                                                "div"
-                                            );
-
-                                        lessonActions.style.marginTop =
-                                            "12px";
-
-
-                                        // OPEN LESSON
-
-                                        const openLessonButton =
-                                            document.createElement(
-                                                "button"
-                                            );
-
-                                        openLessonButton.textContent =
-                                            "Open Lesson →";
-
-                                        openLessonButton.style.border =
-                                            "none";
-
-                                        openLessonButton.style.background =
-                                            "#ff7900";
-
-                                        openLessonButton.style.color =
-                                            "#ffffff";
-
-                                        openLessonButton.style.padding =
-                                            "10px 15px";
-
-                                        openLessonButton.style.borderRadius =
-                                            "9px";
-
-                                        openLessonButton.style.cursor =
-                                            "pointer";
-
-
-                                        openLessonButton.addEventListener(
-                                            "click",
-                                            () => {
-
-                                                window.location.href =
-                                                    `lesson.html?id=${lessonDoc.id}`;
-
-                                            }
+                                        await editLesson(
+                                            lessonDoc.id,
+                                            cleanTitle,
+                                            cleanContent
                                         );
-
-
-                                        lessonActions.appendChild(
-                                            openLessonButton
-                                        );
-
-
-                                        // EDIT LESSON
-
-                                        const editLessonButton =
-                                            document.createElement(
-                                                "button"
-                                            );
-
-                                        editLessonButton.textContent =
-                                            "✏️ Edit Lesson";
-
-                                        editLessonButton.style.marginLeft =
-                                            "8px";
-
-                                        editLessonButton.style.border =
-                                            "none";
-
-                                        editLessonButton.style.background =
-                                            "#f5f5f5";
-
-                                        editLessonButton.style.color =
-                                            "#171717";
-
-                                        editLessonButton.style.padding =
-                                            "10px 15px";
-
-                                        editLessonButton.style.borderRadius =
-                                            "9px";
-
-                                        editLessonButton.style.cursor =
-                                            "pointer";
-
-
-                                        editLessonButton.addEventListener(
-                                            "click",
-                                            async () => {
-
-                                                const newTitle =
-                                                    prompt(
-                                                        "Enter the new lesson title:",
-                                                        lesson.title ||
-                                                        ""
-                                                    );
-
-
-                                                if (
-                                                    newTitle ===
-                                                    null
-                                                ) {
-
-                                                    return;
-                                                }
-
-
-                                                const newContent =
-                                                    prompt(
-                                                        "Enter the new lesson content:",
-                                                        lesson.content ||
-                                                        ""
-                                                    );
-
-
-                                                if (
-                                                    newContent ===
-                                                    null
-                                                ) {
-
-                                                    return;
-                                                }
-
-
-                                                const cleanTitle =
-                                                    newTitle.trim();
-
-
-                                                const cleanContent =
-                                                    newContent.trim();
-
-
-                                                if (
-                                                    !cleanTitle ||
-                                                    !cleanContent
-                                                ) {
-
-                                                    alert(
-                                                        "Lesson title and content cannot be empty."
-                                                    );
-
-                                                    return;
-                                                }
-
-
-                                                await editLesson(
-                                                    lessonDoc.id,
-                                                    cleanTitle,
-                                                    cleanContent
-                                                );
-
-                                            }
-                                        );
-
-
-                                        lessonActions.appendChild(
-                                            editLessonButton
-                                        );
-
-
-                                        // DELETE LESSON
-
-                                        const deleteLessonButton =
-                                            document.createElement(
-                                                "button"
-                                            );
-
-                                        deleteLessonButton.textContent =
-                                            "🗑️ Delete Lesson";
-
-                                        deleteLessonButton.style.marginLeft =
-                                            "8px";
-
-                                        deleteLessonButton.style.border =
-                                            "none";
-
-                                        deleteLessonButton.style.background =
-                                            "#fff0f0";
-
-                                        deleteLessonButton.style.color =
-                                            "#d60000";
-
-                                        deleteLessonButton.style.padding =
-                                            "10px 15px";
-
-                                        deleteLessonButton.style.borderRadius =
-                                            "9px";
-
-                                        deleteLessonButton.style.cursor =
-                                            "pointer";
-
-
-                                        deleteLessonButton.addEventListener(
-                                            "click",
-                                            async () => {
-
-                                                const confirmed =
-                                                    confirm(
-                                                        "Are you sure you want to delete this lesson?\n\n" +
-                                                        lesson.title
-                                                    );
-
-
-                                                if (!confirmed) {
-
-                                                    return;
-                                                }
-
-
-                                                await deleteLesson(
-                                                    lessonDoc.id
-                                                );
-
-                                            }
-                                        );
-
-
-                                        lessonActions.appendChild(
-                                            deleteLessonButton
-                                        );
-
-
-                                        lessonItem.appendChild(
-                                            lessonHeading
-                                        );
-
-                                        lessonItem.appendChild(
-                                            lessonPreview
-                                        );
-
-                                        lessonItem.appendChild(
-                                            lessonActions
-                                        );
-
-
-                                        lessonsContainer.appendChild(
-                                            lessonItem
-                                        );
-
                                     }
                                 );
 
-                            }
-
-                        } catch (error) {
-
-                            console.error(
-                                "Error loading lessons:",
-                                error
-                            );
+                                lessonActions.appendChild(editLessonButton);
 
 
-                            const errorMessage =
-                                document.createElement(
-                                    "p"
+                                // DELETE LESSON
+                                const deleteLessonButton =
+                                    document.createElement("button");
+
+                                deleteLessonButton.type = "button";
+                                deleteLessonButton.textContent = "🗑️ Delete Lesson";
+                                deleteLessonButton.style.marginLeft = "8px";
+
+                                deleteLessonButton.addEventListener(
+                                    "click",
+                                    async () => {
+
+                                        const confirmed = confirm(
+                                            'Are you sure you want to delete "' +
+                                            (lesson.title || "this lesson") +
+                                            '"?'
+                                        );
+
+                                        if (!confirmed) return;
+
+                                        await deleteLesson(lessonDoc.id);
+                                    }
                                 );
 
-                            errorMessage.textContent =
-                                "Unable to load lessons.";
+                                lessonActions.appendChild(deleteLessonButton);
 
-                            lessonsContainer.appendChild(
-                                errorMessage
-                            );
+                                lessonItem.appendChild(lessonHeading);
+                                lessonItem.appendChild(lessonPreview);
+                                lessonItem.appendChild(lessonActions);
 
+                                lessonsContainer.appendChild(lessonItem);
+                            }
                         }
 
+                    } catch (error) {
 
-                        courseCard.appendChild(
-                            lessonsContainer
-                        );
+                        console.error("Error loading lessons:", error);
 
+                        const errorMessage = document.createElement("p");
+                        errorMessage.textContent =
+                            "Unable to load lessons. Check your Firestore permissions or indexes.";
 
-                        myCourses.appendChild(
-                            courseCard
-                        );
-
-
-                        // =============================
-                        // COURSE SELECT
-                        // =============================
-
-                        const option =
-                            document.createElement(
-                                "option"
-                            );
-
-                        option.value =
-                            courseDoc.id;
-
-                        option.textContent =
-                            course.title;
-
-
-                        courseSelect.appendChild(
-                            option
-                        );
-
+                        lessonsContainer.appendChild(errorMessage);
                     }
-                );
 
+                    courseCard.appendChild(lessonsContainer);
+                    myCourses.appendChild(courseCard);
+
+
+                    // -----------------------------
+                    // ADD COURSE TO LESSON SELECT
+                    // -----------------------------
+
+                    const option = document.createElement("option");
+                    option.value = courseDoc.id;
+                    option.textContent = course.title || "Untitled Course";
+
+                    courseSelect.appendChild(option);
+                }
 
             } catch (error) {
 
-                console.error(
-                    "Error loading courses:",
-                    error
-                );
-
+                console.error("Error loading courses:", error);
 
                 myCourses.innerHTML =
-                    `
-                    <p>
-                        Unable to load courses.
-                    </p>
-                    `;
+                    "<p>Unable to load courses. Please check your Firebase permissions.</p>";
 
+                showMessage(
+                    courseMessage,
+                    "Error loading courses: " + error.message,
+                    true
+                );
             }
-
         }
 
 
-        // =============================
+        // =====================================
         // EDIT COURSE
-        // =============================
+        // =====================================
 
-        async function editCourse(
-            courseId,
-            newTitle,
-            newDescription
-        ) {
+        async function editCourse(courseId, newTitle, newDescription) {
 
             try {
 
-                courseMessage.textContent =
-                    "Updating course...";
+                showMessage(courseMessage, "Updating course...");
 
+                await updateDoc(doc(db, "courses", courseId), {
+                    title: newTitle,
+                    description: newDescription
+                });
 
-                await updateDoc(
-                    doc(
-                        db,
-                        "courses",
-                        courseId
-                    ),
-                    {
-
-                        title:
-                            newTitle,
-
-                        description:
-                            newDescription
-
-                    }
+                showMessage(
+                    courseMessage,
+                    "Course updated successfully! ✅"
                 );
 
-
-                courseMessage.textContent =
-                    "Course updated successfully! ✅";
-
-
-                loadCourses(
-                    currentUser.uid
-                );
-
+                await loadCourses(currentUser.uid);
 
             } catch (error) {
 
-                console.error(
-                    "Error updating course:",
-                    error
+                console.error("Error updating course:", error);
+
+                showMessage(
+                    courseMessage,
+                    "Unable to update course: " + error.message,
+                    true
                 );
-
-
-                courseMessage.textContent =
-                    `${error.code}: ${error.message}`;
-
             }
-
         }
 
 
-        // =============================
+        // =====================================
         // DELETE COURSE
-        // =============================
+        // =====================================
 
-        async function deleteCourse(
-            courseId
-        ) {
+        async function deleteCourse(courseId) {
 
             try {
 
-                courseMessage.textContent =
-                    "Deleting course...";
+                showMessage(courseMessage, "Deleting course...");
 
+                await deleteDoc(doc(db, "courses", courseId));
 
-                await deleteDoc(
-                    doc(
-                        db,
-                        "courses",
-                        courseId
-                    )
+                showMessage(
+                    courseMessage,
+                    "Course deleted successfully! ✅"
                 );
 
-
-                courseMessage.textContent =
-                    "Course deleted successfully! ✅";
-
-
-                loadCourses(
-                    currentUser.uid
-                );
-
+                await loadCourses(currentUser.uid);
 
             } catch (error) {
 
-                console.error(
-                    "Error deleting course:",
-                    error
+                console.error("Error deleting course:", error);
+
+                showMessage(
+                    courseMessage,
+                    "Unable to delete course: " + error.message,
+                    true
                 );
-
-
-                courseMessage.textContent =
-                    `${error.code}: ${error.message}`;
-
             }
-
         }
 
 
-        // =============================
+        // =====================================
         // EDIT LESSON
-        // =============================
+        // =====================================
 
-        async function editLesson(
-            lessonId,
-            newTitle,
-            newContent
-        ) {
+        async function editLesson(lessonId, newTitle, newContent) {
 
             try {
 
-                lessonMessage.textContent =
-                    "Updating lesson...";
+                showMessage(lessonMessage, "Updating lesson...");
 
+                await updateDoc(doc(db, "lessons", lessonId), {
+                    title: newTitle,
+                    content: newContent
+                });
 
-                await updateDoc(
-                    doc(
-                        db,
-                        "lessons",
-                        lessonId
-                    ),
-                    {
-
-                        title:
-                            newTitle,
-
-                        content:
-                            newContent
-
-                    }
+                showMessage(
+                    lessonMessage,
+                    "Lesson updated successfully! ✅"
                 );
 
-
-                lessonMessage.textContent =
-                    "Lesson updated successfully! ✅";
-
-
-                loadCourses(
-                    currentUser.uid
-                );
-
+                await loadCourses(currentUser.uid);
 
             } catch (error) {
 
-                console.error(
-                    "Error updating lesson:",
-                    error
+                console.error("Error updating lesson:", error);
+
+                showMessage(
+                    lessonMessage,
+                    "Unable to update lesson: " + error.message,
+                    true
                 );
-
-
-                lessonMessage.textContent =
-                    `${error.code}: ${error.message}`;
-
             }
-
         }
 
 
-        // =============================
+        // =====================================
         // DELETE LESSON
-        // =============================
+        // =====================================
 
-        async function deleteLesson(
-            lessonId
-        ) {
+        async function deleteLesson(lessonId) {
 
             try {
 
-                lessonMessage.textContent =
-                    "Deleting lesson...";
+                showMessage(lessonMessage, "Deleting lesson...");
 
+                await deleteDoc(doc(db, "lessons", lessonId));
 
-                await deleteDoc(
-                    doc(
-                        db,
-                        "lessons",
-                        lessonId
-                    )
+                showMessage(
+                    lessonMessage,
+                    "Lesson deleted successfully! ✅"
                 );
 
-
-                lessonMessage.textContent =
-                    "Lesson deleted successfully! ✅";
-
-
-                loadCourses(
-                    currentUser.uid
-                );
-
+                await loadCourses(currentUser.uid);
 
             } catch (error) {
 
-                console.error(
-                    "Error deleting lesson:",
-                    error
+                console.error("Error deleting lesson:", error);
+
+                showMessage(
+                    lessonMessage,
+                    "Unable to delete lesson: " + error.message,
+                    true
                 );
-
-
-                lessonMessage.textContent =
-                    `${error.code}: ${error.message}`;
-
             }
-
         }
 
 
-        // =============================
+        // =====================================
         // CREATE LESSON
-        // =============================
+        // =====================================
 
-        lessonForm.addEventListener(
-            "submit",
-            async (event) => {
+        lessonForm.addEventListener("submit", async (event) => {
 
-                event.preventDefault();
+            event.preventDefault();
 
-
-                const selectedCourse =
-                    courseSelect.value;
-
-
-                const title =
-                    lessonTitle.value.trim();
-
-
-                const content =
-                    lessonContent.value.trim();
-
-
-                if (
-                    !selectedCourse ||
-                    !title ||
-                    !content
-                ) {
-
-                    lessonMessage.textContent =
-                        "Please fill in all fields.";
-
-                    return;
-                }
-
-
-                try {
-
-                    lessonMessage.textContent =
-                        "Creating lesson...";
-
-
-                    await addDoc(
-                        collection(
-                            db,
-                            "lessons"
-                        ),
-                        {
-
-                            courseId:
-                                selectedCourse,
-
-                            title:
-                                title,
-
-                            content:
-                                content,
-
-                            instructorId:
-                                currentUser.uid,
-
-                            instructorName:
-                                instructorName.textContent,
-
-                            createdAt:
-                                serverTimestamp()
-
-                        }
-                    );
-
-
-                    lessonMessage.textContent =
-                        "Lesson created successfully! ✅";
-
-
-                    lessonForm.reset();
-
-
-                    loadCourses(
-                        currentUser.uid
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Error creating lesson:",
-                        error
-                    );
-
-
-                    lessonMessage.textContent =
-                        `${error.code}: ${error.message}`;
-
-                }
-
+            if (!currentUser) {
+                showMessage(lessonMessage, "Please log in first.", true);
+                return;
             }
-        );
+
+            const selectedCourse = courseSelect.value;
+            const title = lessonTitle.value.trim();
+            const content = lessonContent.value.trim();
+
+            if (!selectedCourse || !title || !content) {
+                showMessage(
+                    lessonMessage,
+                    "Please fill in all lesson fields.",
+                    true
+                );
+                return;
+            }
+
+            try {
+
+                showMessage(lessonMessage, "Creating lesson...");
+
+                await addDoc(collection(db, "lessons"), {
+                    courseId: selectedCourse,
+                    title: title,
+                    content: content,
+                    instructorId: currentUser.uid,
+                    instructorName: currentInstructorName,
+                    createdAt: serverTimestamp()
+                });
+
+                showMessage(
+                    lessonMessage,
+                    "Lesson created successfully! ✅"
+                );
+
+                lessonForm.reset();
+
+                await loadCourses(currentUser.uid);
+
+            } catch (error) {
+
+                console.error("Error creating lesson:", error);
+
+                showMessage(
+                    lessonMessage,
+                    "Unable to create lesson: " + error.message,
+                    true
+                );
+            }
+        });
 
     </script>
 
 </body>
-
 </html>
-```

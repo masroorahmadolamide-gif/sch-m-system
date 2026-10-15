@@ -16,7 +16,6 @@
     <main class="dashboard">
 
         <header class="dashboard-header">
-
             <div>
                 <h1 id="course-title">Loading course...</h1>
                 <p id="course-instructor">Loading instructor...</p>
@@ -25,7 +24,6 @@
             <button id="back-courses" type="button">
                 ← Courses
             </button>
-
         </header>
 
         <section class="dashboard-content">
@@ -38,25 +36,18 @@
             </div>
 
             <div class="dashboard-card">
-
                 <h3>📖 Course Lessons</h3>
 
-                <p>
-                    Select a lesson below to start learning.
-                </p>
+                <p>Select a lesson below to start learning.</p>
 
                 <div id="lessons-container">
-
                     <p>Loading lessons...</p>
-
                 </div>
-
             </div>
 
         </section>
 
     </main>
-
 
     <script type="module">
 
@@ -147,7 +138,6 @@
                         "This course does not exist.";
 
                     lessonsContainer.replaceChildren();
-
                     return;
                 }
 
@@ -156,9 +146,35 @@
                 courseTitle.textContent =
                     "📚 " + (course.title || "Untitled Course");
 
+                // Read the instructor name using the correct Firestore field.
+                let instructorName =
+                    course.instructorName ||
+                    course.instructor ||
+                    "";
+
+                // If the course has no saved name, try the instructor's profile.
+                if (!instructorName && course.instructorId) {
+
+                    const instructorSnapshot = await getDoc(
+                        doc(db, "users", course.instructorId)
+                    );
+
+                    if (instructorSnapshot.exists()) {
+
+                        const instructorData =
+                            instructorSnapshot.data();
+
+                        instructorName =
+                            instructorData.name ||
+                            instructorData.displayName ||
+                            "";
+
+                    }
+                }
+
                 courseInstructor.textContent =
                     "👨‍🏫 Instructor: " +
-                    (course.instructor || "Not assigned");
+                    (instructorName || "Name unavailable");
 
                 courseDescription.textContent =
                     course.description ||
@@ -185,7 +201,6 @@
                         "No lessons yet. Your instructor will add lessons here.";
 
                     lessonsContainer.appendChild(message);
-
                     return;
                 }
 
@@ -194,6 +209,7 @@
 
                 const lessons = lessonsSnapshot.docs.sort(
                     (a, b) => {
+
                         const numberA = Number(
                             a.data().lessonNumber || 0
                         );
@@ -217,7 +233,6 @@
                         document.createElement("div");
 
                     lessonCard.className = "dashboard-card";
-
                     lessonCard.style.marginTop = "18px";
 
 
@@ -225,29 +240,29 @@
                         document.createElement("h3");
 
                     title.textContent =
-                        "📖 Lesson " +
-                        (lesson.lessonNumber || "") +
-                        ": " +
+                        "📖 " +
+                        (lesson.lessonNumber
+                            ? "Lesson " + lesson.lessonNumber + ": "
+                            : "") +
                         (lesson.title || "Untitled Lesson");
 
 
                     const preview =
                         document.createElement("p");
 
-                    const content =
-                        lesson.content || "";
+                    const content = lesson.content || "";
 
                     preview.textContent =
                         content.length > 150
                             ? content.substring(0, 150) + "..."
-                            : content || "No lesson description available.";
+                            : content ||
+                              "No lesson description available.";
 
 
                     const button =
                         document.createElement("button");
 
                     button.type = "button";
-
                     button.textContent = "Open Lesson →";
 
 
@@ -298,5 +313,4 @@
     </script>
 
 </body>
-
 </html>

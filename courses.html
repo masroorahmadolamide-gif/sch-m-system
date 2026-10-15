@@ -15,6 +15,7 @@
 
     <main class="dashboard">
 
+        <!-- HEADER -->
         <header class="dashboard-header">
 
             <div>
@@ -29,6 +30,7 @@
         </header>
 
 
+        <!-- COURSE CONTENT -->
         <section class="dashboard-content">
 
             <div class="welcome-card">
@@ -50,6 +52,7 @@
     </main>
 
 
+    <!-- FIREBASE -->
     <script type="module">
 
         import {
@@ -66,9 +69,15 @@
             collection,
             getDocs,
             query,
-            where
+            where,
+            doc,
+            getDoc
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+
+        // =====================================
+        // FIREBASE CONFIGURATION
+        // =====================================
 
         const firebaseConfig = {
             apiKey: "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
@@ -82,30 +91,88 @@
 
 
         const app = initializeApp(firebaseConfig);
-
         const auth = getAuth(app);
-
         const db = getFirestore(app);
 
         const coursesContainer =
             document.getElementById("courses-container");
 
 
+        // =====================================
+        // AUTHENTICATION
+        // =====================================
+
         onAuthStateChanged(auth, async (user) => {
 
             if (!user) {
-                window.location.href = "index.html";
+                window.location.replace("index.html");
                 return;
             }
 
-            await loadCourses(user.uid);
+            try {
+
+                // Make sure the signed-in account is a student.
+                const userSnap = await getDoc(
+                    doc(db, "users", user.uid)
+                );
+
+                if (!userSnap.exists()) {
+                    coursesContainer.innerHTML =
+                        "<div class='dashboard-card'><h3>Profile not found</h3><p>Your account profile could not be found.</p></div>";
+                    return;
+                }
+
+                const userData = userSnap.data();
+
+                if (userData.role !== "student") {
+                    coursesContainer.innerHTML =
+                        "<div class='dashboard-card'><h3>Student access only</h3><p>Please log in with a student account to view courses.</p></div>";
+                    return;
+                }
+
+                await loadCourses(user.uid);
+
+            } catch (error) {
+
+                console.error("Authentication error:", error);
+
+                showPageMessage(
+                    "Unable to verify your account. Please refresh and try again."
+                );
+
+            }
 
         });
 
 
-        async function loadCourses(userId) {
+        // =====================================
+        // PAGE MESSAGE
+        // =====================================
+
+        function showPageMessage(message) {
 
             coursesContainer.innerHTML = "";
+
+            const card = document.createElement("div");
+            card.className = "dashboard-card";
+
+            const text = document.createElement("p");
+            text.textContent = message;
+
+            card.appendChild(text);
+            coursesContainer.appendChild(card);
+
+        }
+
+
+        // =====================================
+        // LOAD COURSES
+        // =====================================
+
+        async function loadCourses(userId) {
+
+            coursesContainer.innerHTML =
+                "<div class='dashboard-card'><h3>Loading courses...</h3><p>Please wait.</p></div>";
 
             try {
 
@@ -115,13 +182,9 @@
                     progressSnapshot
                 ] = await Promise.all([
 
-                    getDocs(
-                        collection(db, "courses")
-                    ),
+                    getDocs(collection(db, "courses")),
 
-                    getDocs(
-                        collection(db, "lessons")
-                    ),
+                    getDocs(collection(db, "lessons")),
 
                     getDocs(
                         query(
@@ -133,26 +196,26 @@
                 ]);
 
 
+                coursesContainer.innerHTML = "";
+
+
+                // =====================================
+                // NO COURSES
+                // =====================================
+
                 if (coursesSnapshot.empty) {
 
-                    const card =
-                        document.createElement("div");
-
+                    const card = document.createElement("div");
                     card.className = "dashboard-card";
 
-                    const title =
-                        document.createElement("h3");
-
+                    const title = document.createElement("h3");
                     title.textContent = "No courses yet";
 
-                    const text =
-                        document.createElement("p");
-
+                    const text = document.createElement("p");
                     text.textContent =
                         "Courses will appear here when instructors create them.";
 
                     card.append(title, text);
-
                     coursesContainer.appendChild(card);
 
                     return;
@@ -160,7 +223,9 @@
                 }
 
 
+                // =====================================
                 // GROUP LESSONS BY COURSE
+                // =====================================
 
                 const lessonsByCourse = new Map();
 
@@ -171,23 +236,20 @@
                     if (!lesson.courseId) return;
 
                     if (!lessonsByCourse.has(lesson.courseId)) {
-                        lessonsByCourse.set(
-                            lesson.courseId,
-                            []
-                        );
+                        lessonsByCourse.set(lesson.courseId, []);
                     }
 
-                    lessonsByCourse
-                        .get(lesson.courseId)
-                        .push({
-                            id: lessonDoc.id,
-                            ...lesson
-                        });
+                    lessonsByCourse.get(lesson.courseId).push({
+                        id: lessonDoc.id,
+                        ...lesson
+                    });
 
                 });
 
 
+                // =====================================
                 // GROUP COMPLETED LESSONS BY COURSE
+                // =====================================
 
                 const completedByCourse = new Map();
 
@@ -197,32 +259,49 @@
 
                     if (
                         progress.completed !== true ||
-                        !progress.courseId ||
                         !progress.lessonId
                     ) {
                         return;
                     }
 
-                    if (!completedByCourse.has(progress.courseId)) {
-                        completedByCourse.set(
-                            progress.courseId,
-                            new Set()
-                        );
+                    // Prefer the course ID stored with progress.
+                    // If it is missing, derive it from the lesson.
+                    let courseId = progress.courseId;
+
+                    if (!courseId) {
+
+                        const matchingLesson =
+                            lessonsSnapshot.docs.find(
+                                lessonDoc =>
+                                    lessonDoc.id === progress.lessonId
+                            );
+
+                        if (matchingLesson) {
+                            courseId = matchingLesson.data().courseId;
+                        }
+
+                    }
+
+                    if (!courseId) return;
+
+                    if (!completedByCourse.has(courseId)) {
+                        completedByCourse.set(courseId, new Set());
                     }
 
                     completedByCourse
-                        .get(progress.courseId)
+                        .get(courseId)
                         .add(progress.lessonId);
 
                 });
 
 
+                // =====================================
                 // DISPLAY EACH COURSE
+                // =====================================
 
                 coursesSnapshot.forEach((courseDoc) => {
 
                     const course = courseDoc.data();
-
                     const courseId = courseDoc.id;
 
                     const courseLessons =
@@ -232,17 +311,14 @@
                         completedByCourse.get(courseId) || new Set();
 
 
-                    // Count only completed lessons
-                    // that actually belong to this course.
+                    // COURSE PROGRESS
 
                     const totalLessons = courseLessons.length;
 
                     const completedCount =
                         courseLessons.filter(
-                            lesson =>
-                                completedLessons.has(lesson.id)
+                            lesson => completedLessons.has(lesson.id)
                         ).length;
-
 
                     const percentage = totalLessons > 0
                         ? Math.round(
@@ -251,39 +327,67 @@
                         : 0;
 
 
-                    const card =
-                        document.createElement("div");
+                    // =====================================
+                    // COURSE CARD
+                    // =====================================
 
+                    const card = document.createElement("div");
                     card.className = "dashboard-card course-card";
 
 
-                    const title =
-                        document.createElement("h3");
+                    // COURSE TITLE
+
+                    const title = document.createElement("h3");
 
                     title.textContent =
-                        `📚 ${course.title || "Untitled Course"}`;
+                        "📚 " + (course.title || "Untitled Course");
 
 
-                    const description =
-                        document.createElement("p");
+                    // COURSE DESCRIPTION
+
+                    const description = document.createElement("p");
 
                     description.textContent =
                         course.description ||
                         "No course description available.";
 
 
-                    const instructor =
-                        document.createElement("p");
+                    // =====================================
+                    // INSTRUCTOR NAME
+                    // =====================================
+
+                    const instructor = document.createElement("p");
 
                     instructor.className = "course-instructor";
 
+                    instructor.style.margin = "12px 0";
+                    instructor.style.padding = "10px 12px";
+                    instructor.style.background = "#fff3e8";
+                    instructor.style.color = "#9a4300";
+                    instructor.style.borderRadius = "8px";
+                    instructor.style.fontSize = "14px";
+
+
+                    // The instructor dashboard saves instructorName.
+                    // Support the older instructor field as well.
+
+                    let instructorName =
+                        typeof course.instructorName === "string"
+                            ? course.instructorName.trim()
+                            : "";
+
+                    if (!instructorName && typeof course.instructor === "string") {
+                        instructorName = course.instructor.trim();
+                    }
+
                     instructor.textContent =
-                        `👨‍🏫 Instructor: ${
-                            course.instructor || "Not assigned"
-                        }`;
+                        "👨‍🏫 Instructor: " +
+                        (instructorName || "Instructor name unavailable");
 
 
+                    // =====================================
                     // PROGRESS SECTION
+                    // =====================================
 
                     const progressSection =
                         document.createElement("div");
@@ -302,15 +406,14 @@
                     const progressLabel =
                         document.createElement("span");
 
-                    progressLabel.textContent =
-                        "Your progress";
+                    progressLabel.textContent = "Your progress";
 
 
                     const progressPercentage =
                         document.createElement("strong");
 
                     progressPercentage.textContent =
-                        `${percentage}%`;
+                        percentage + "%";
 
 
                     progressInfo.append(
@@ -322,25 +425,12 @@
                     const progressTrack =
                         document.createElement("div");
 
-                    progressTrack.className =
-                        "progress-track";
+                    progressTrack.className = "progress-track";
 
-
-                    progressTrack.setAttribute(
-                        "role",
-                        "progressbar"
-                    );
-
-                    progressTrack.setAttribute(
-                        "aria-valuemin",
-                        "0"
-                    );
-
-                    progressTrack.setAttribute(
-                        "aria-valuemax",
-                        "100"
-                    );
-
+                    progressTrack.setAttribute("role", "progressbar");
+                    progressTrack.setAttribute("aria-label", "Course lesson completion");
+                    progressTrack.setAttribute("aria-valuemin", "0");
+                    progressTrack.setAttribute("aria-valuemax", "100");
                     progressTrack.setAttribute(
                         "aria-valuenow",
                         String(percentage)
@@ -350,24 +440,17 @@
                     const progressBar =
                         document.createElement("div");
 
-                    progressBar.className =
-                        "progress-bar";
-
-                    progressBar.style.width =
-                        `${percentage}%`;
+                    progressBar.className = "progress-bar";
+                    progressBar.style.width = percentage + "%";
 
 
-                    progressTrack.appendChild(
-                        progressBar
-                    );
+                    progressTrack.appendChild(progressBar);
 
 
                     const progressCount =
                         document.createElement("p");
 
-                    progressCount.className =
-                        "course-progress-count";
-
+                    progressCount.className = "course-progress-count";
 
                     if (totalLessons === 0) {
 
@@ -377,7 +460,10 @@
                     } else {
 
                         progressCount.textContent =
-                            `${completedCount} of ${totalLessons} lessons completed`;
+                            completedCount +
+                            " of " +
+                            totalLessons +
+                            " lessons completed";
 
                     }
 
@@ -389,24 +475,26 @@
                     );
 
 
+                    // =====================================
                     // OPEN COURSE BUTTON
+                    // =====================================
 
                     const button =
                         document.createElement("button");
 
                     button.type = "button";
-
-                    button.textContent =
-                        "Open Course →";
-
+                    button.textContent = "Open Course →";
 
                     button.addEventListener("click", () => {
 
                         window.location.href =
-                            `course-details.html?id=${encodeURIComponent(courseId)}`;
+                            "course-details.html?id=" +
+                            encodeURIComponent(courseId);
 
                     });
 
+
+                    // ADD ELEMENTS TO CARD
 
                     card.append(
                         title,
@@ -415,7 +503,6 @@
                         progressSection,
                         button
                     );
-
 
                     coursesContainer.appendChild(card);
 
@@ -429,35 +516,18 @@
                     error
                 );
 
-                coursesContainer.innerHTML = "";
-
-                const errorCard =
-                    document.createElement("div");
-
-                errorCard.className = "dashboard-card";
-
-                const title =
-                    document.createElement("h3");
-
-                title.textContent =
-                    "Unable to load courses";
-
-
-                const text =
-                    document.createElement("p");
-
-                text.textContent =
-                    "Please check your internet connection and Firebase permissions, then refresh the page.";
-
-
-                errorCard.append(title, text);
-
-                coursesContainer.appendChild(errorCard);
+                showPageMessage(
+                    "Unable to load courses. Please check your internet connection and Firebase permissions, then refresh the page."
+                );
 
             }
 
         }
 
+
+        // =====================================
+        // BACK TO DASHBOARD
+        // =====================================
 
         document
             .getElementById("back-dashboard")

@@ -1,0 +1,497 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Learning Platform</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .profile-page {
+            max-width: 650px;
+            margin: 35px auto;
+            padding: 20px;
+        }
+
+        .profile-box {
+            background: white;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+        }
+
+        .profile-top {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .profile-photo {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            background: #fff0e4;
+            color: #ff7900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            font-weight: bold;
+            margin: 0 auto 12px;
+            object-fit: cover;
+            border: 3px solid #ff7900;
+        }
+
+        .photo-button {
+            margin-top: 8px;
+        }
+
+        .profile-form {
+            display: grid;
+            gap: 17px;
+        }
+
+        .profile-form label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
+        }
+
+        .profile-form input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 9px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+
+        .profile-form input:focus {
+            outline: 2px solid #ff7900;
+            border-color: #ff7900;
+        }
+
+        .profile-email {
+            background: #f5f5f5;
+        }
+
+        .profile-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .profile-actions button {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        #profile-message {
+            font-size: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 480px) {
+            .profile-page {
+                margin: 15px auto;
+                padding: 12px;
+            }
+
+            .profile-box {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="dashboard">
+        <header class="dashboard-header">
+            <div>
+                <h1>👤 My Profile</h1>
+                <p>Manage your account details.</p>
+            </div>
+
+            <button id="back-btn" type="button">
+                ← Dashboard
+            </button>
+        </header>
+
+        <section class="profile-page">
+            <div class="profile-box">
+
+                <div class="profile-top">
+                    <div id="avatar-fallback" class="profile-photo">
+                        U
+                    </div>
+
+                    <img
+                        id="profile-photo"
+                        class="profile-photo"
+                        alt="Your profile picture"
+                        hidden
+                    >
+
+                    <h2 id="display-name">Loading profile...</h2>
+                    <p id="display-role">Loading account type...</p>
+
+                    <button
+                        id="choose-photo"
+                        class="photo-button"
+                        type="button"
+                    >
+                        Choose Profile Picture
+                    </button>
+
+                    <input
+                        id="photo-input"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        hidden
+                    >
+
+                    <p id="photo-status">
+                        Choose a picture, then save your profile.
+                    </p>
+                </div>
+
+                <form id="profile-form" class="profile-form">
+
+                    <div>
+                        <label for="full-name">Full Name</label>
+                        <input
+                            id="full-name"
+                            type="text"
+                            maxlength="80"
+                            placeholder="Enter your full name"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="email">Email Address</label>
+                        <input
+                            id="email"
+                            class="profile-email"
+                            type="email"
+                            readonly
+                        >
+                    </div>
+
+                    <div>
+                        <label for="account-type">Account Type</label>
+                        <input
+                            id="account-type"
+                            type="text"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="profile-actions">
+                        <button id="save-btn" type="submit">
+                            Save Changes
+                        </button>
+
+                        <button id="cancel-btn" type="button">
+                            Cancel
+                        </button>
+                    </div>
+
+                    <p id="profile-message" role="status"></p>
+
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+        import {
+            getAuth,
+            onAuthStateChanged,
+            updateProfile
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        import {
+            getStorage,
+            ref,
+            uploadBytes,
+            getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5AIhj-oze4EDIdgEc0QgMqgn-2GmRPu8",
+            authDomain: "sch-m-system.firebaseapp.com",
+            projectId: "sch-m-system",
+            storageBucket: "sch-m-system.firebasestorage.app",
+            messagingSenderId: "24559011089",
+            appId: "1:24559011089:web:8009d445b45223b53e38b0",
+            measurementId: "G-4J1V0208LJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        const form = document.getElementById("profile-form");
+        const nameInput = document.getElementById("full-name");
+        const emailInput = document.getElementById("email");
+        const roleInput = document.getElementById("account-type");
+        const displayName = document.getElementById("display-name");
+        const displayRole = document.getElementById("display-role");
+        const fallback = document.getElementById("avatar-fallback");
+        const photo = document.getElementById("profile-photo");
+        const photoInput = document.getElementById("photo-input");
+        const photoStatus = document.getElementById("photo-status");
+        const message = document.getElementById("profile-message");
+        const saveButton = document.getElementById("save-btn");
+
+        let currentUser = null;
+        let currentRole = "student";
+        let currentPhotoURL = "";
+        let selectedPhoto = null;
+
+        function showMessage(text, isError = false) {
+            message.textContent = text;
+            message.style.color = isError ? "#c62828" : "#25803d";
+        }
+
+        function showPhoto(url, name = "U") {
+            if (url) {
+                photo.src = url;
+                photo.hidden = false;
+                fallback.hidden = true;
+            } else {
+                photo.removeAttribute("src");
+                photo.hidden = true;
+                fallback.hidden = false;
+                fallback.textContent =
+                    (name.trim().charAt(0) || "U").toUpperCase();
+            }
+        }
+
+        function restoreProfile() {
+            nameInput.value = displayName.textContent === "Loading profile..."
+                ? ""
+                : nameInput.dataset.savedName || "";
+
+            showPhoto(currentPhotoURL, nameInput.value || "U");
+            selectedPhoto = null;
+            photoInput.value = "";
+            photoStatus.textContent =
+                "Choose a picture, then save your profile.";
+            showMessage("");
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            currentUser = user;
+
+            try {
+                const snapshot = await getDoc(
+                    doc(db, "users", user.uid)
+                );
+
+                const data = snapshot.exists()
+                    ? snapshot.data()
+                    : {};
+
+                const name =
+                    data.name ||
+                    user.displayName ||
+                    user.email?.split("@")[0] ||
+                    "Student";
+
+                currentRole = data.role || "student";
+                currentPhotoURL = data.photoURL || user.photoURL || "";
+
+                nameInput.value = name;
+                nameInput.dataset.savedName = name;
+                emailInput.value = data.email || user.email || "";
+                roleInput.value = currentRole;
+
+                displayName.textContent = name;
+                displayRole.textContent =
+                    currentRole.charAt(0).toUpperCase() +
+                    currentRole.slice(1);
+
+                showPhoto(currentPhotoURL, name);
+
+            } catch (error) {
+                console.error("Profile loading error:", error);
+                showMessage(
+                    "Unable to load your profile. Check your connection and try again.",
+                    true
+                );
+            }
+        });
+
+        document
+            .getElementById("choose-photo")
+            .addEventListener("click", () => {
+                photoInput.click();
+            });
+
+        photoInput.addEventListener("change", () => {
+            const file = photoInput.files[0];
+
+            if (!file) return;
+
+            if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+                showMessage("Choose a JPG, PNG, or WebP image.", true);
+                photoInput.value = "";
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage("Your image must be 5 MB or smaller.", true);
+                photoInput.value = "";
+                return;
+            }
+
+            selectedPhoto = file;
+
+            const previewURL = URL.createObjectURL(file);
+            showPhoto(previewURL, nameInput.value || "U");
+
+            photoStatus.textContent = file.name + " selected. Save to upload it.";
+            showMessage("");
+        });
+
+        nameInput.addEventListener("input", () => {
+            displayName.textContent = nameInput.value.trim() || "Your Name";
+
+            if (!selectedPhoto) {
+                showPhoto(currentPhotoURL, nameInput.value || "U");
+            } else {
+                fallback.textContent =
+                    (nameInput.value.trim().charAt(0) || "U").toUpperCase();
+            }
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            if (!currentUser) return;
+
+            const name = nameInput.value.trim();
+
+            if (name.length < 2) {
+                showMessage("Enter a name with at least 2 characters.", true);
+                return;
+            }
+
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+            showMessage("");
+
+            try {
+                let photoURL = currentPhotoURL;
+
+                if (selectedPhoto) {
+                    photoStatus.textContent = "Uploading picture...";
+
+                    const photoRef = ref(
+                        storage,
+                        "profilePictures/" +
+                        currentUser.uid +
+                        "/" +
+                        Date.now() +
+                        "_" +
+                        selectedPhoto.name.replace(/[^a-zA-Z0-9._-]/g, "_")
+                    );
+
+                    const uploaded = await uploadBytes(
+                        photoRef,
+                        selectedPhoto
+                    );
+
+                    photoURL = await getDownloadURL(uploaded.ref);
+                }
+
+                await setDoc(
+                    doc(db, "users", currentUser.uid),
+                    {
+                        name: name,
+                        email: currentUser.email || "",
+                        role: currentRole,
+                        photoURL: photoURL,
+                        updatedAt: serverTimestamp()
+                    },
+                    { merge: true }
+                );
+
+                await updateProfile(currentUser, {
+                    displayName: name,
+                    photoURL: photoURL || null
+                });
+
+                currentPhotoURL = photoURL;
+                nameInput.dataset.savedName = name;
+                displayName.textContent = name;
+
+                showPhoto(currentPhotoURL, name);
+                selectedPhoto = null;
+                photoInput.value = "";
+                photoStatus.textContent = "Profile picture saved.";
+                showMessage("Profile updated successfully!");
+
+            } catch (error) {
+                console.error("Profile save error:", error);
+
+                if (error.code === "storage/unauthorized" ||
+                    error.code === "storage/bucket-not-found" ||
+                    error.code === "storage/unknown") {
+                    showMessage(
+                        "Photo upload failed. Check that Firebase Storage is enabled and its security rules allow this upload. Your changes may not have been saved.",
+                        true
+                    );
+                } else {
+                    showMessage(
+                        "Could not save your profile. Check your Firebase connection and security rules, then try again.",
+                        true
+                    );
+                }
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = "Save Changes";
+            }
+        });
+
+        document
+            .getElementById("cancel-btn")
+            .addEventListener("click", () => {
+                nameInput.value = nameInput.dataset.savedName || "";
+                displayName.textContent = nameInput.value || "Your Name";
+                selectedPhoto = null;
+                restoreProfile();
+            });
+
+        document
+            .getElementById("back-btn")
+            .addEventListener("click", () => {
+                window.location.href = "dashboard.html";
+            });
+    </script>
+
+</body>
+</html>
